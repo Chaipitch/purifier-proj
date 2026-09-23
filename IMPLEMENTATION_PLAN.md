@@ -24,7 +24,7 @@ Scope is narrowed to the `noritzLineChat` widget on the Account record page, con
 - Refresh method: **platform event via empApi (confirmed working, no polling traffic)**; falls back to 3 s polling automatically if the subscription fails.
 - [ ] Layout: at 1440×900 the chat sits below the fold because the details panel above it is tall. Decide: move the chat above the details, or put the details in a collapsed tab.
 
-**Stage B — connect to LINE OA** (deployed 2026-09-23, waiting on your setup)
+**Stage B — connect to LINE OA** (complete 2026-09-23)
 
 - [x] External Credential `LINE_Messaging` + Named Credential `LINE_Messaging_API` (no token in source)
 - [x] `LINE_Settings__c` custom setting (no secret in source)
