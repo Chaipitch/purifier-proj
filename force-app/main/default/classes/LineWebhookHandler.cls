@@ -1,6 +1,7 @@
 // Called by the LINE platform through the public Site, so it runs as the Site guest user.
-// without sharing: the guest user can't see Accounts through sharing, and every request is
-// authenticated by the X-Line-Signature check before anything is read or written.
+// The guest user can't see Accounts or earlier messages, so the lookups run WITH SYSTEM_MODE
+// (at this API version, queries otherwise respect the running user's access even without sharing).
+// That is safe only because every request passes the X-Line-Signature check first.
 @RestResource(urlMapping='/line/webhook/*')
 global without sharing class LineWebhookHandler {
   @HttpPost
@@ -80,6 +81,7 @@ global without sharing class LineWebhookHandler {
       SELECT LINE_Message_ID__c
       FROM LINE_Message__c
       WHERE LINE_Message_ID__c IN :messageIds
+      WITH SYSTEM_MODE
     ]) {
       alreadySaved.add(m.LINE_Message_ID__c);
     }
@@ -88,6 +90,7 @@ global without sharing class LineWebhookHandler {
       SELECT Id, LINE_User_ID__c
       FROM Account
       WHERE LINE_User_ID__c IN :userIds
+      WITH SYSTEM_MODE
       ORDER BY CreatedDate
     ]) {
       if (!accountByLineId.containsKey(a.LINE_User_ID__c)) {
