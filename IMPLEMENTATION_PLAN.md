@@ -59,6 +59,25 @@ Webhook URL: `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce-sites.com/
 - [x] Apex tests: 20 passing
 - Demo note: the button is on the Contract, the chat is on the Account. Click it on the Contract tab, then switch to Somchai's tab; the chat is already updated.
 
+**Scenario 2 — Payment Failure & Auto Recovery** (complete 2026-09-23)
+
+- [x] `Payment Failed` moved to the Activated status category; values reordered Pending Payment → Active → Payment Failed (tested both ways)
+- [x] Record-triggered Flow `Payment_Failure_Recovery` on `Payment_History__c` (after insert, `Status__c = Failed`): Contract → Payment Failed, Account → Payment Suspended, publish refresh, queue LINE retry
+- [x] `SendPaymentRetryAction` queues the LINE push (callouts can't run inside the save); message type Payment Retry with mock link `.../demo/<sub>/update-payment`
+- [x] "Simulate Payment Failure" button on the Contract (headless LWC): inserts a failed payment (plan price, Card Expired (ERR-02)), refreshes the contract page, toast
+- [x] Live on Somchai's page with no refresh: highlights Status, Path and chat (retry message with "Update payment method" button) — all within ~2 s
+- [x] Contract page flips 🟢Active → 🔴Payment Failed within ~2 s of the click
+- [x] Retry message delivered to LINE (Sent)
+- [x] `scripts/apex/reset_demo.apex` (renamed from seed): Contract + Account back to Active, 2 successful payments, chat history; only Somchai's records
+- [x] Apex tests: 22 passing, including an end-to-end test of the whole recovery
+- [ ] Stripe webhook endpoint (Task 10) as the second way to trigger the failure — not built yet
+
+**Scenario 2 gotchas:**
+
+- For a `th_TH` user, `Date.toStartOfMonth()` rebuilds the date from the Buddhist year and saves 2569. Use `d.addDays(1 - d.day())`. `Date.today()` and `addDays` are fine; `.year()` only _displays_ 2569.
+- Right after a deploy, the browser can keep running the old component for one load. Reload twice before rehearsing.
+- Other customers' demo records (Somsri Tephaluk, Somsak Bangna, contracts 00000102/103) were created in the org by the Kamonphob user on 2026-09-23. The reset script doesn't touch them, but the recovery flow runs for **any** failed payment.
+
 ---
 
 ## Progress at a glance (full demo, mostly deferred)

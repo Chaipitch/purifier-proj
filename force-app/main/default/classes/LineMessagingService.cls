@@ -4,30 +4,49 @@ public with sharing class LineMessagingService {
     public String error;
   }
 
-  // Push first, then insert: Apex forbids a callout after DML in the same transaction.
-  // Customers without a LINE id get a local-only message with no delivery status.
   public static LINE_Message__c sendAndSave(
     Id accountId,
     String text,
     String messageType
   ) {
     Account acc = [SELECT LINE_User_ID__c FROM Account WHERE Id = :accountId];
+    LINE_Message__c msg = outbound(
+      accountId,
+      acc.LINE_User_ID__c,
+      text,
+      messageType
+    );
+    pushAndInsert(new List<LINE_Message__c>{ msg });
+    return msg;
+  }
 
-    LINE_Message__c msg = new LINE_Message__c(
+  public static LINE_Message__c outbound(
+    Id accountId,
+    String lineUserId,
+    String text,
+    String messageType
+  ) {
+    return new LINE_Message__c(
       Account__c = accountId,
       Direction__c = 'Outbound',
       Message_Type__c = messageType,
       Message_Body__c = text,
-      LINE_User_ID__c = acc.LINE_User_ID__c,
+      LINE_User_ID__c = lineUserId,
       Sent_At__c = System.now()
     );
-    if (String.isNotBlank(acc.LINE_User_ID__c)) {
-      PushResult result = pushText(acc.LINE_User_ID__c, text);
-      msg.Delivery_Status__c = result.success ? 'Sent' : 'Failed';
-      msg.Delivery_Error__c = result.error;
+  }
+
+  // Every push happens before the single insert: Apex forbids a callout after DML in the
+  // same transaction. Messages to customers without a LINE id are saved with no delivery status.
+  public static void pushAndInsert(List<LINE_Message__c> messages) {
+    for (LINE_Message__c msg : messages) {
+      if (String.isNotBlank(msg.LINE_User_ID__c)) {
+        PushResult result = pushText(msg.LINE_User_ID__c, msg.Message_Body__c);
+        msg.Delivery_Status__c = result.success ? 'Sent' : 'Failed';
+        msg.Delivery_Error__c = result.error;
+      }
     }
-    insert msg;
-    return msg;
+    insert messages;
   }
 
   public static PushResult pushText(String lineUserId, String text) {

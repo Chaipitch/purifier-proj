@@ -193,6 +193,7 @@ private class NoritzLineChatControllerTest {
     Id accountId = customer().Id;
 
     Test.startTest();
+    Integer before = Limits.getDmlStatements();
     insert new List<LINE_Message__c>{
       new LINE_Message__c(
         Account__c = accountId,
@@ -209,13 +210,13 @@ private class NoritzLineChatControllerTest {
         Message_Body__c = 'no account'
       )
     };
-    Integer published = Limits.getPublishImmediateDML();
+    Integer used = Limits.getDmlStatements() - before;
     Test.stopTest();
 
     Assert.areEqual(
-      1,
-      published,
-      'Expected a single publish call for the batch'
+      2,
+      used,
+      'Expected the insert plus a single publish call for the batch'
     );
   }
 }

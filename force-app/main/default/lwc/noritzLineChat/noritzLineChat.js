@@ -1,6 +1,7 @@
 import { LightningElement, api } from "lwc";
 import { subscribe, unsubscribe, onError } from "lightning/empApi";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
+import { notifyRecordUpdateAvailable } from "lightning/uiRecordApi";
 import TIME_ZONE from "@salesforce/i18n/timeZone";
 import getChat from "@salesforce/apex/NoritzLineChatController.getChat";
 import sendMessage from "@salesforce/apex/NoritzLineChatController.sendMessage";
@@ -91,6 +92,9 @@ export default class NoritzLineChat extends LightningElement {
     subscribe(CHANNEL, -1, (event) => {
       if (event?.data?.payload?.Account_Id__c === this.recordId) {
         this.loadChat();
+        // Server-side changes (e.g. the payment failure flow) don't reach the standard
+        // highlights panel or Path on their own; this makes the page re-read the Account.
+        notifyRecordUpdateAvailable([{ recordId: this.recordId }]);
       }
     })
       .then((sub) => {

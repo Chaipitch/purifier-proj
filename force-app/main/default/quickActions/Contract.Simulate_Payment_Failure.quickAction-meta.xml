@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionSubtype>Action</actionSubtype>
+    <description
+  >One click: records a failed payment (Card Expired) so the recovery flow runs.</description>
+    <label>Simulate Payment Failure</label>
+    <lightningWebComponent>noritzSimulatePaymentFailure</lightningWebComponent>
+    <optionsCreateFeedItem>false</optionsCreateFeedItem>
+    <type>LightningWebComponent</type>
+</QuickAction>

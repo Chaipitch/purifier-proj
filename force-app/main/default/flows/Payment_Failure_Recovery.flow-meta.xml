@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Send_Retry_Link_on_LINE</name>
+        <label>Send Retry Link on LINE</label>
+        <locationX>176</locationX>
+        <locationY>539</locationY>
+        <actionName>SendPaymentRetryAction</actionName>
+        <actionType>apex</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>contractIds</name>
+            <value>
+                <elementReference>$Record.Contract__c</elementReference>
+            </value>
+        </inputParameters>
+        <storeOutputAutomatically>false</storeOutputAutomatically>
+    </actionCalls>
+    <apiVersion>67.0</apiVersion>
+    <description
+  >When a payment fails: mark the contract Payment Failed, suspend the customer, refresh open screens, and send the customer a payment retry link on LINE.</description>
+    <environments>Default</environments>
+    <interviewLabel
+  >Payment Failure Recovery {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Payment Failure Recovery</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordCreates>
+        <name>Refresh_Open_Screens</name>
+        <label>Refresh Open Screens</label>
+        <locationX>176</locationX>
+        <locationY>431</locationY>
+        <connector>
+            <targetReference>Send_Retry_Link_on_LINE</targetReference>
+        </connector>
+        <inputAssignments>
+            <field>Account_Id__c</field>
+            <value>
+                <elementReference
+        >$Record.Contract__r.AccountId</elementReference>
+            </value>
+        </inputAssignments>
+        <object>LINE_Chat_Refresh__e</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordCreates>
+    <recordUpdates>
+        <name>Mark_Contract_Payment_Failed</name>
+        <label>Mark Contract Payment Failed</label>
+        <locationX>176</locationX>
+        <locationY>215</locationY>
+        <connector>
+            <targetReference>Suspend_Customer</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Contract__c</elementReference>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>Status</field>
+            <value>
+                <stringValue>Payment Failed</stringValue>
+            </value>
+        </inputAssignments>
+        <object>Contract</object>
+    </recordUpdates>
+    <recordUpdates>
+        <name>Suspend_Customer</name>
+        <label>Suspend Customer</label>
+        <locationX>176</locationX>
+        <locationY>323</locationY>
+        <connector>
+            <targetReference>Refresh_Open_Screens</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference
+        >$Record.Contract__r.AccountId</elementReference>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>Customer_Status__c</field>
+            <value>
+                <stringValue>Payment Suspended</stringValue>
+            </value>
+        </inputAssignments>
+        <object>Account</object>
+    </recordUpdates>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Mark_Contract_Payment_Failed</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Status__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Failed</stringValue>
+            </value>
+        </filters>
+        <object>Payment_History__c</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

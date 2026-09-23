@@ -12,6 +12,10 @@
         <apexClass>SendCheckoutLinkAction</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>SimulatePaymentFailureAction</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <externalCredentialPrincipalAccesses>
         <enabled>true</enabled>
         <externalCredentialPrincipal
