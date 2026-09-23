@@ -1,6 +1,6 @@
 // Called by the LINE platform through the public Site, so it runs as the Site guest user.
-// The guest user can't see Accounts or earlier messages, so the lookups run WITH SYSTEM_MODE
-// (at this API version, queries otherwise respect the running user's access even without sharing).
+// The guest user can't see Accounts or earlier messages, so lookups and the insert run in system
+// mode (at this API version they otherwise respect the running user's access even without sharing).
 // That is safe only because every request passes the X-Line-Signature check first.
 @RestResource(urlMapping='/line/webhook/*')
 global without sharing class LineWebhookHandler {
@@ -121,7 +121,7 @@ global without sharing class LineWebhookHandler {
     }
     // allOrNone=false: if LINE redelivers the same message concurrently, the unique
     // LINE_Message_ID__c rejects the duplicate without failing the rest.
-    Database.insert(toInsert, false);
+    Database.insert(toInsert, false, AccessLevel.SYSTEM_MODE);
   }
 
   private static String bodyOf(Map<String, Object> message) {
