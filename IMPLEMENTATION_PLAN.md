@@ -20,8 +20,9 @@ Scope is narrowed to the `noritzLineChat` widget on the Account record page, con
 - [x] `noritzLineChat` LWC (LWC Jest tests dropped at user's request)
 - [x] Added to `Account_Record_Page`, left column under the details
 - [x] `scripts/apex/seed_line_chat.apex`, run once
-- [ ] Check in the browser: page is the one Somchai's record uses, history shows, send works, live update from an Apex insert
-- Refresh method: platform event via empApi; falls back to 3 s polling automatically if the subscription fails.
+- [x] Check in the browser: page is the one Somchai's record uses, history shows, send works, live update from an Apex insert (checked 2026-09-23)
+- Refresh method: **platform event via empApi (confirmed working, no polling traffic)**; falls back to 3 s polling automatically if the subscription fails.
+- [ ] Layout: at 1440×900 the chat sits below the fold because the details panel above it is tall. Decide: move the chat above the details, or put the details in a collapsed tab.
 
 **Stage B — connect to LINE OA** (not started)
 
