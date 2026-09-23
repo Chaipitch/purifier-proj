@@ -1,0 +1,85 @@
+<template>
+  <article class="slds-card chat">
+    <header class="chat__header">
+      <span class="chat__logo" aria-hidden="true">LINE</span>
+      <h2 class="slds-text-heading_small slds-truncate" title={title}>
+        {title}
+      </h2>
+    </header>
+
+    <template lwc:if={notLinked}>
+      <div
+        class="slds-notify slds-notify_alert slds-alert_warning chat__banner"
+        role="status"
+      >
+        This customer hasn't linked a LINE account. Messages are saved in
+        Salesforce only.
+      </div>
+    </template>
+
+    <div class="chat__scroller" lwc:ref="scroller">
+      <template lwc:if={isLoading}>
+        <lightning-spinner
+          alternative-text="Loading messages"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template lwc:if={loadError}>
+        <p class="chat__status slds-text-color_error">{loadError}</p>
+      </template>
+      <template lwc:if={showEmpty}>
+        <p class="chat__status slds-text-color_weak">No messages yet.</p>
+      </template>
+
+      <template for:each={messages} for:item="msg">
+        <div key={msg.id} class={msg.rowClass} data-id={msg.id}>
+          <div class={msg.bubbleClass}>
+            <template lwc:if={msg.text}>
+              <lightning-formatted-text
+                value={msg.text}
+                linkify
+              ></lightning-formatted-text>
+            </template>
+            <template lwc:if={msg.linkUrl}>
+              <div class="bubble__action">
+                <button
+                  class="slds-button slds-button_neutral link-button"
+                  data-url={msg.linkUrl}
+                  onclick={handleOpenLink}
+                >
+                  {msg.linkLabel}
+                </button>
+              </div>
+            </template>
+          </div>
+          <div class="meta">
+            <span>{msg.time}</span>
+            <template lwc:if={msg.failed}>
+              <span class="meta__failed">Not delivered</span>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <footer class="chat__composer">
+      <textarea
+        class="slds-textarea chat__input"
+        rows="2"
+        placeholder="Type a message. Enter to send, Shift+Enter for a new line"
+        aria-label="Message"
+        lwc:ref="input"
+        oninput={handleDraftChange}
+        onkeydown={handleKeyDown}
+        disabled={isSending}
+      ></textarea>
+      <button
+        class="slds-button slds-button_brand chat__send"
+        onclick={handleSend}
+        disabled={sendDisabled}
+      >
+        Send
+      </button>
+    </footer>
+  </article>
+</template>

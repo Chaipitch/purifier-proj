@@ -1,0 +1,119 @@
+.chat {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat__header {
+  display: flex;
+  align-items: center;
+  gap: var(--slds-g-spacing-2, 0.5rem);
+  padding: var(--slds-g-spacing-3, 0.75rem) var(--slds-g-spacing-4, 1rem);
+  border-bottom: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
+}
+
+.chat__logo {
+  background: #06c755;
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+}
+
+.chat__banner {
+  border-radius: 0;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.chat__scroller {
+  position: relative;
+  height: 480px;
+  overflow-y: auto;
+  padding: var(--slds-g-spacing-3, 0.75rem) var(--slds-g-spacing-4, 1rem);
+  background: var(--slds-g-color-neutral-base-95, #f3f3f3);
+}
+
+.chat__status {
+  text-align: center;
+  padding-top: var(--slds-g-spacing-6, 2rem);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--slds-g-spacing-3, 0.75rem);
+}
+
+.row_inbound {
+  align-items: flex-start;
+}
+
+.row_outbound {
+  align-items: flex-end;
+}
+
+.bubble {
+  max-width: 80%;
+  padding: var(--slds-g-spacing-2, 0.5rem) var(--slds-g-spacing-3, 0.75rem);
+  border-radius: 1rem;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.bubble_inbound {
+  background: var(--slds-g-color-neutral-base-100, #fff);
+  color: var(--slds-g-color-neutral-base-10, #181818);
+  border-bottom-left-radius: 0.25rem;
+}
+
+.bubble_outbound {
+  background: #06c755;
+  color: #fff;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.bubble_outbound lightning-formatted-text {
+  --slds-g-link-color: #fff;
+  --slds-g-link-color-hover: #fff;
+}
+
+.bubble__action {
+  margin-top: var(--slds-g-spacing-2, 0.5rem);
+}
+
+.link-button {
+  width: 100%;
+  justify-content: center;
+  color: #06c755;
+  font-weight: 700;
+}
+
+.meta {
+  display: flex;
+  gap: var(--slds-g-spacing-2, 0.5rem);
+  margin-top: var(--slds-g-spacing-1, 0.25rem);
+  font-size: 0.75rem;
+  color: var(--slds-g-color-neutral-base-50, #747474);
+}
+
+.meta__failed {
+  color: var(--slds-g-color-error-base-40, #ba0517);
+  font-weight: 700;
+}
+
+.chat__composer {
+  display: flex;
+  gap: var(--slds-g-spacing-2, 0.5rem);
+  align-items: flex-end;
+  padding: var(--slds-g-spacing-3, 0.75rem) var(--slds-g-spacing-4, 1rem);
+  border-top: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
+}
+
+.chat__input {
+  flex: 1;
+  resize: none;
+  min-height: 2.5rem;
+}
