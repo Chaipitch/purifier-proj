@@ -33,12 +33,19 @@ Scope is narrowed to the `noritzLineChat` widget on the Account record page, con
 - [x] Site `line_webhook` + `LINE_Webhook_Guest` permission set assigned to the guest user
 - [x] Apex tests: 16 passing, coverage 98–100%
 - [x] Public endpoint reachable (returns "Channel secret is not configured" until step 2 below)
-- [ ] ⛔ You: paste the channel access token into the External Credential principal
-- [ ] ⛔ You: paste the channel secret into Custom Settings → LINE Settings
-- [ ] ⛔ You: set the webhook URL in LINE Developers, Verify, turn on "Use webhook", turn off auto-response
-- [ ] ⛔ You: send one message to the OA from your phone
-- [ ] Link Somchai's `LINE_User_ID__c` from that message
-- [ ] Round trip checked twice
+- [x] Channel access token entered in the External Credential principal (parameter name `token`, lowercase)
+- [x] Channel secret entered in Custom Settings → LINE Settings
+- [x] Webhook URL set in LINE Developers, "Use webhook" on, auto-response off
+- [x] Somchai's `LINE_User_ID__c` linked from the first test message
+- [x] Salesforce → phone: widget send delivered (Sent)
+- [x] Phone → Salesforce: reply appears live in the widget (confirmed by user 2026-09-23)
+- [x] Chat reset to seed history after testing
+
+**Stage B gotchas (fixed, keep in mind):**
+
+- Header formula must use the principal parameter name exactly (`token`), and the Named Credential needs "Allow Formulas in HTTP Header" on. Either one missing → LINE 401.
+- At API 67 the Site guest user's access applies to Apex queries and DML even in a `without sharing` class. The webhook runs its lookups and insert in system mode, after the signature check.
+- Don't redeploy `externalCredentials/` casually: it may reset the principal and drop the token.
 
 Webhook URL: `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce-sites.com/line/services/apexrest/line/webhook`
 
