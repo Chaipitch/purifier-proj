@@ -58,29 +58,7 @@ public with sharing class NoritzLineChatController {
       );
     }
 
-    Account acc = [SELECT LINE_User_ID__c FROM Account WHERE Id = :accountId];
-
-    LINE_Message__c msg = new LINE_Message__c(
-      Account__c = accountId,
-      Direction__c = 'Outbound',
-      Message_Type__c = 'Text',
-      Message_Body__c = text,
-      LINE_User_ID__c = acc.LINE_User_ID__c,
-      Sent_At__c = System.now()
-    );
-
-    // Push before insert: Apex forbids a callout after DML in the same transaction.
-    // Customers without a LINE id get a local-only message with no delivery status.
-    if (String.isNotBlank(acc.LINE_User_ID__c)) {
-      LineMessagingService.PushResult result = LineMessagingService.pushText(
-        acc.LINE_User_ID__c,
-        text
-      );
-      msg.Delivery_Status__c = result.success ? 'Sent' : 'Failed';
-      msg.Delivery_Error__c = result.error;
-    }
-    insert msg;
-    return msg;
+    return LineMessagingService.sendAndSave(accountId, text, 'Text');
   }
 
   private static AuraHandledException auraError(String message) {

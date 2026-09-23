@@ -1,7 +1,13 @@
-// Resets Somchai's LINE chat to the demo history. Safe to run repeatedly.
+// Resets Somchai's LINE chat to the demo history and readies his contract for Scenario 1
+// (Premium, sub_demo_12345). Safe to run repeatedly.
 // sf apex run --file scripts/apex/seed_line_chat.apex --target-org noritz
 
 Account somchai = [SELECT Id, LINE_User_ID__c FROM Account WHERE Name = 'Somchai Sukhumvit' LIMIT 1];
+
+Contract contract = [SELECT Id FROM Contract WHERE AccountId = :somchai.Id ORDER BY CreatedDate LIMIT 1];
+contract.Subscription_Plan__c = 'Premium (1,500 THB)';
+contract.Stripe_Sub_ID__c = 'sub_demo_12345';
+update contract;
 
 delete [SELECT Id FROM LINE_Message__c WHERE Account__c = :somchai.Id];
 

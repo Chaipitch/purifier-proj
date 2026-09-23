@@ -8,6 +8,10 @@
         <apexClass>NoritzLineChatController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>SendCheckoutLinkAction</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <externalCredentialPrincipalAccesses>
         <enabled>true</enabled>
         <externalCredentialPrincipal

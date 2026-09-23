@@ -49,6 +49,16 @@ Scope is narrowed to the `noritzLineChat` widget on the Account record page, con
 
 Webhook URL: `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce-sites.com/line/services/apexrest/line/webhook`
 
+**Scenario 1 — Quick Signup** (complete 2026-09-23)
+
+- [x] "Send Stripe Checkout Link" button on the Contract (first action on `Contract Layout`)
+- [x] One click: headless LWC `noritzSendCheckoutLink` → `SendCheckoutLinkAction.send` → pushes to LINE, saves a Checkout Link message → green toast
+- [x] Mock link `https://checkout.stripe.com/demo/<Stripe_Sub_ID__c>`; message in Thai with the plan name
+- [x] Chat shows it with an "Open checkout" button; phone receives it
+- [x] Seed script sets Somchai's contract to Premium + `sub_demo_12345` (Pending Payment)
+- [x] Apex tests: 20 passing
+- Demo note: the button is on the Contract, the chat is on the Account. Click it on the Contract tab, then switch to Somchai's tab; the chat is already updated.
+
 ---
 
 ## Progress at a glance (full demo, mostly deferred)
@@ -79,6 +89,7 @@ Webhook URL: `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce-sites.com/
 | 2026-09-23 | Move `Payment Failed` from the In Approval category to **Activated**.                                             | Salesforce won't move an Activated contract back to In Approval, so `Active → Payment Failed` would fail on stage. |
 | 2026-09-23 | Path runs on `Contract.Status`.                                                                                   | Follows from the decision above.                                                                                   |
 | 2026-09-23 | Real LINE OA integration is in scope (was a stretch goal).                                                        | User has a LINE OA account and wants the chat widget connected to it.                                              |
+| 2026-09-23 | Scenario 1 button is a headless LWC quick action, not a Screen Flow (CLAUDE.md §3 Task 9).                        | A screenless Flow leaves a "Your flow finished" pop-up on stage; the LWC is one click with a toast.                |
 
 **Contract Status rules to build around:**
 

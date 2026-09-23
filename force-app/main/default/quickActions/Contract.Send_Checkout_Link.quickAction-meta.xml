@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionSubtype>Action</actionSubtype>
+    <description
+  >One click: sends the mock Stripe checkout link to the customer on LINE.</description>
+    <label>Send Stripe Checkout Link</label>
+    <lightningWebComponent>noritzSendCheckoutLink</lightningWebComponent>
+    <optionsCreateFeedItem>false</optionsCreateFeedItem>
+    <type>LightningWebComponent</type>
+</QuickAction>
