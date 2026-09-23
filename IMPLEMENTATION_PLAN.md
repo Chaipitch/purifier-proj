@@ -24,16 +24,23 @@ Scope is narrowed to the `noritzLineChat` widget on the Account record page, con
 - Refresh method: **platform event via empApi (confirmed working, no polling traffic)**; falls back to 3 s polling automatically if the subscription fails.
 - [ ] Layout: at 1440×900 the chat sits below the fold because the details panel above it is tall. Decide: move the chat above the details, or put the details in a collapsed tab.
 
-**Stage B — connect to LINE OA** (not started)
+**Stage B — connect to LINE OA** (deployed 2026-09-23, waiting on your setup)
 
-- [ ] Named Credential + External Credential (you paste the channel access token in Setup)
-- [ ] `LINE_Settings__c` custom setting (you paste the channel secret in Setup)
-- [ ] `LineMessagingService` push + tests
-- [ ] `LineWebhookHandler` + signature check + tests
-- [ ] Salesforce Site; the guest user needs class access **and field access** (API 67 Apex DML enforces field access)
-- [ ] You register the webhook URL in the LINE console and turn off auto-reply
-- [ ] Link Somchai's `LINE_User_ID__c` from your first test message
+- [x] External Credential `LINE_Messaging` + Named Credential `LINE_Messaging_API` (no token in source)
+- [x] `LINE_Settings__c` custom setting (no secret in source)
+- [x] `LineMessagingService` push; controller pushes before saving, keeps `Delivery_Error__c` on failure
+- [x] `LineWebhookHandler`: signature check, dedupe, unknown senders saved without an account
+- [x] Site `line_webhook` + `LINE_Webhook_Guest` permission set assigned to the guest user
+- [x] Apex tests: 16 passing, coverage 98–100%
+- [x] Public endpoint reachable (returns "Channel secret is not configured" until step 2 below)
+- [ ] ⛔ You: paste the channel access token into the External Credential principal
+- [ ] ⛔ You: paste the channel secret into Custom Settings → LINE Settings
+- [ ] ⛔ You: set the webhook URL in LINE Developers, Verify, turn on "Use webhook", turn off auto-response
+- [ ] ⛔ You: send one message to the OA from your phone
+- [ ] Link Somchai's `LINE_User_ID__c` from that message
 - [ ] Round trip checked twice
+
+Webhook URL: `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce-sites.com/line/services/apexrest/line/webhook`
 
 ---
 
