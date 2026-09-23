@@ -55,7 +55,7 @@ Webhook URL: `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce-sites.com/
 - [x] One click: headless LWC `noritzSendCheckoutLink` → `SendCheckoutLinkAction.send` → pushes to LINE, saves a Checkout Link message → green toast
 - [x] Mock link `https://checkout.stripe.com/demo/<Stripe_Sub_ID__c>`; message in Thai with the plan name
 - [x] Chat shows it with an "Open checkout" button; phone receives it
-- [x] Seed script sets Somchai's contract to Premium + `sub_demo_12345` (Pending Payment)
+- [x] Reset script sets Somchai's contract to Premium + `sub_demo_12345` (now Active, see Scenario 2)
 - [x] Apex tests: 20 passing
 - Demo note: the button is on the Contract, the chat is on the Account. Click it on the Contract tab, then switch to Somchai's tab; the chat is already updated.
 
