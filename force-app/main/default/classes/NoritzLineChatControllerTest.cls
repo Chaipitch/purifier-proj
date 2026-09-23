@@ -1,0 +1,100 @@
+@IsTest
+private class NoritzLineChatControllerTest {
+    @TestSetup
+    static void setup() {
+        Id personType = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('PersonAccount').getRecordTypeId();
+        insert new Account(RecordTypeId = personType, FirstName = 'Test', LastName = 'Customer', LINE_User_ID__c = 'U_test_123');
+    }
+
+    static Account customer() {
+        return [SELECT Id FROM Account WHERE LINE_User_ID__c = 'U_test_123'];
+    }
+
+    @IsTest
+    static void getChatReturnsMessagesOldestFirst() {
+        Id accountId = customer().Id;
+        Datetime base = System.now();
+        insert new List<LINE_Message__c>{
+            new LINE_Message__c(Account__c = accountId, Direction__c = 'Outbound', Message_Body__c = 'second', Sent_At__c = base),
+            new LINE_Message__c(Account__c = accountId, Direction__c = 'Inbound', Message_Body__c = 'first', Sent_At__c = base.addMinutes(-5))
+        };
+
+        NoritzLineChatController.ChatData data = NoritzLineChatController.getChat(accountId);
+
+        Assert.areEqual('Test Customer', data.customerName);
+        Assert.areEqual('U_test_123', data.lineUserId);
+        Assert.areEqual(2, data.messages.size());
+        Assert.areEqual('first', data.messages[0].Message_Body__c);
+        Assert.areEqual('second', data.messages[1].Message_Body__c);
+    }
+
+    @IsTest
+    static void getChatKeepsOnlyNewest50() {
+        Id accountId = customer().Id;
+        Datetime base = System.now();
+        List<LINE_Message__c> msgs = new List<LINE_Message__c>();
+        for (Integer i = 0; i < 55; i++) {
+            msgs.add(new LINE_Message__c(Account__c = accountId, Direction__c = 'Inbound', Message_Body__c = 'm' + i, Sent_At__c = base.addSeconds(i)));
+        }
+        insert msgs;
+
+        List<LINE_Message__c> shown = NoritzLineChatController.getChat(accountId).messages;
+
+        Assert.areEqual(50, shown.size());
+        Assert.areEqual('m5', shown[0].Message_Body__c);
+        Assert.areEqual('m54', shown[49].Message_Body__c);
+    }
+
+    @IsTest
+    static void sendMessageSavesTrimmedOutbound() {
+        Id accountId = customer().Id;
+
+        Test.startTest();
+        LINE_Message__c saved = NoritzLineChatController.sendMessage(accountId, '  Hello Somchai  ');
+        Test.stopTest();
+
+        LINE_Message__c row = [SELECT Direction__c, Message_Body__c, Message_Type__c, LINE_User_ID__c, Delivery_Status__c FROM LINE_Message__c WHERE Id = :saved.Id];
+        Assert.areEqual('Outbound', row.Direction__c);
+        Assert.areEqual('Hello Somchai', row.Message_Body__c);
+        Assert.areEqual('Text', row.Message_Type__c);
+        Assert.areEqual('U_test_123', row.LINE_User_ID__c);
+        Assert.areEqual('Sent', row.Delivery_Status__c);
+    }
+
+    @IsTest
+    static void sendMessageRejectsBlank() {
+        try {
+            NoritzLineChatController.sendMessage(customer().Id, '   ');
+            Assert.fail('Expected an error for a blank message');
+        } catch (AuraHandledException e) {
+            Assert.areEqual('Type a message before sending.', e.getMessage());
+        }
+        Assert.areEqual(0, [SELECT COUNT() FROM LINE_Message__c]);
+    }
+
+    @IsTest
+    static void sendMessageRejectsTooLong() {
+        try {
+            NoritzLineChatController.sendMessage(customer().Id, 'x'.repeat(4001));
+            Assert.fail('Expected an error for a message over 4000 characters');
+        } catch (AuraHandledException e) {
+            Assert.isTrue(e.getMessage().startsWith('Message is too long'));
+        }
+    }
+
+    @IsTest
+    static void triggerPublishesOneRefreshPerAccount() {
+        Id accountId = customer().Id;
+
+        Test.startTest();
+        insert new List<LINE_Message__c>{
+            new LINE_Message__c(Account__c = accountId, Direction__c = 'Inbound', Message_Body__c = 'a'),
+            new LINE_Message__c(Account__c = accountId, Direction__c = 'Inbound', Message_Body__c = 'b'),
+            new LINE_Message__c(Direction__c = 'Inbound', Message_Body__c = 'no account')
+        };
+        Integer published = Limits.getPublishImmediateDML();
+        Test.stopTest();
+
+        Assert.areEqual(1, published, 'Expected a single publish call for the batch');
+    }
+}
