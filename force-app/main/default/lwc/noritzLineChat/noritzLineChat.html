@@ -55,7 +55,7 @@
           <div class="meta">
             <span>{msg.time}</span>
             <template lwc:if={msg.failed}>
-              <span class="meta__failed">Not delivered</span>
+              <span class="meta__failed" title={msg.error}>Not delivered</span>
             </template>
           </div>
         </div>

@@ -149,6 +149,7 @@ export default class NoritzLineChat extends LightningElement {
         linkUrl,
         linkLabel: linkUrl ? LINK_LABELS[m.Message_Type__c] : undefined,
         failed: isOutbound && m.Delivery_Status__c === "Failed",
+        error: m.Delivery_Error__c,
         rowClass: isOutbound ? "row row_outbound" : "row row_inbound",
         bubbleClass: isOutbound
           ? "bubble bubble_outbound"
@@ -188,6 +189,15 @@ export default class NoritzLineChat extends LightningElement {
         saved
       ];
       this.scrollPending = true;
+      if (saved.Delivery_Status__c === "Failed") {
+        this.dispatchEvent(
+          new ShowToastEvent({
+            title: "Saved, but not delivered to LINE",
+            message: saved.Delivery_Error__c || "",
+            variant: "warning"
+          })
+        );
+      }
     } catch (error) {
       this.dispatchEvent(
         new ShowToastEvent({

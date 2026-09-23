@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomSite xmlns="http://soap.sforce.com/2006/04/metadata">
+    <active>true</active>
+    <allowGuestPaymentsApi>false</allowGuestPaymentsApi>
+    <allowHomePage>false</allowHomePage>
+    <allowStandardAnswersPages>false</allowStandardAnswersPages>
+    <allowStandardIdeasPages>false</allowStandardIdeasPages>
+    <allowStandardLookups>false</allowStandardLookups>
+    <allowStandardPortalPages>false</allowStandardPortalPages>
+    <allowStandardSearch>false</allowStandardSearch>
+    <authorizationRequiredPage>LineWebhookHome</authorizationRequiredPage>
+    <bandwidthExceededPage>LineWebhookHome</bandwidthExceededPage>
+    <browserXssProtection>true</browserXssProtection>
+    <clickjackProtectionLevel>SameOriginOnly</clickjackProtectionLevel>
+    <contentSniffingProtection>true</contentSniffingProtection>
+    <enableAuraRequests>false</enableAuraRequests>
+    <fileNotFoundPage>LineWebhookHome</fileNotFoundPage>
+    <genericErrorPage>LineWebhookHome</genericErrorPage>
+    <inMaintenancePage>LineWebhookHome</inMaintenancePage>
+    <indexPage>LineWebhookHome</indexPage>
+    <masterLabel>LINE Webhook</masterLabel>
+    <referrerPolicyOriginWhenCrossOrigin
+  >true</referrerPolicyOriginWhenCrossOrigin>
+    <siteAdmin>pkamonphob.e021567a8417@agentforce.com</siteAdmin>
+    <siteGuestRecordDefaultOwner
+  >pkamonphob.e021567a8417@agentforce.com</siteGuestRecordDefaultOwner>
+    <siteType>Visualforce</siteType>
+    <urlPathPrefix>line</urlPathPrefix>
+</CustomSite>

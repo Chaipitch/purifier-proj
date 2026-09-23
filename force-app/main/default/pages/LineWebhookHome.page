@@ -1,0 +1,8 @@
+<apex:page
+  showHeader="false"
+  sidebar="false"
+  standardStylesheets="false"
+  applyBodyTag="false"
+>
+  <p>NORITZ LINE webhook. Nothing to see here.</p>
+</apex:page>
