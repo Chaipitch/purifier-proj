@@ -6,6 +6,7 @@
 global without sharing class LineWebhookHandler {
   @TestVisible
   private static final String FOLLOW_TEXT = '[Added the OA as a friend]';
+  private static final String PLACEHOLDER_PREFIX = 'LINE friend ';
 
   @HttpPost
   global static void receive() {
@@ -84,20 +85,30 @@ global without sharing class LineWebhookHandler {
     ]) {
       alreadySaved.add(m.LINE_Message_ID__c);
     }
-    Map<String, Id> accountByLineId = new Map<String, Id>();
+    Map<String, Account> accountByLineId = new Map<String, Account>();
     for (Account a : [
-      SELECT Id, LINE_User_ID__c
+      SELECT Id, LastName, LINE_User_ID__c
       FROM Account
       WHERE LINE_User_ID__c IN :userIds
       WITH SYSTEM_MODE
       ORDER BY CreatedDate
     ]) {
       if (!accountByLineId.containsKey(a.LINE_User_ID__c)) {
-        accountByLineId.put(a.LINE_User_ID__c, a.Id);
+        accountByLineId.put(a.LINE_User_ID__c, a);
       }
     }
 
-    createProspects(userIds, accountByLineId);
+    // Profile lookups are callouts, so all of them run before the first DML below.
+    Map<String, String> displayNames = new Map<String, String>();
+    for (String userId : userIds) {
+      Account existing = accountByLineId.get(userId);
+      if (existing == null || isPlaceholder(existing.LastName)) {
+        displayNames.put(userId, LineMessagingService.fetchDisplayName(userId));
+      }
+    }
+
+    renamePlaceholders(accountByLineId, displayNames);
+    createProspects(userIds, accountByLineId, displayNames);
 
     List<LINE_Message__c> toInsert = new List<LINE_Message__c>();
     for (Map<String, Object> ev : relevant) {
@@ -106,10 +117,11 @@ global without sharing class LineWebhookHandler {
         continue;
       }
       String userId = userIdOf(ev);
+      Account account = accountByLineId.get(userId);
       Map<String, Object> message = (Map<String, Object>) ev.get('message');
       toInsert.add(
         new LINE_Message__c(
-          Account__c = accountByLineId.get(userId),
+          Account__c = account?.Id,
           LINE_User_ID__c = userId,
           LINE_Message_ID__c = key,
           Direction__c = 'Inbound',
@@ -124,12 +136,33 @@ global without sharing class LineWebhookHandler {
     Database.insert(toInsert, false, AccessLevel.SYSTEM_MODE);
   }
 
+  private static Boolean isPlaceholder(String lastName) {
+    return lastName != null && lastName.startsWith(PLACEHOLDER_PREFIX);
+  }
+
+  // An earlier profile lookup failed: use this event's lookup to give the account its real name.
+  private static void renamePlaceholders(
+    Map<String, Account> accountByLineId,
+    Map<String, String> displayNames
+  ) {
+    List<Account> renamed = new List<Account>();
+    for (String userId : displayNames.keySet()) {
+      Account existing = accountByLineId.get(userId);
+      String name = displayNames.get(userId);
+      if (existing != null && String.isNotBlank(name)) {
+        existing.LastName = name;
+        renamed.add(existing);
+      }
+    }
+    Database.update(renamed, false, AccessLevel.SYSTEM_MODE);
+  }
+
   // Every LINE user without an Account becomes a Prospect Person Account named after their
-  // LINE display name. The profile lookups are callouts, so they all run before the first
-  // DML in this transaction. Adds the new Account Ids to accountByLineId.
+  // LINE display name (or a placeholder if the lookup failed). Adds them to accountByLineId.
   private static void createProspects(
     Set<String> userIds,
-    Map<String, Id> accountByLineId
+    Map<String, Account> accountByLineId,
+    Map<String, String> displayNames
   ) {
     Id personType = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
       .get('PersonAccount')
@@ -139,13 +172,13 @@ global without sharing class LineWebhookHandler {
       if (accountByLineId.containsKey(userId)) {
         continue;
       }
-      String name = LineMessagingService.fetchDisplayName(userId);
+      String name = displayNames.get(userId);
       prospects.put(
         userId,
         new Account(
           RecordTypeId = personType,
           LastName = String.isBlank(name)
-            ? 'LINE friend ' + userId.right(4)
+            ? PLACEHOLDER_PREFIX + userId.right(4)
             : name,
           LINE_User_ID__c = userId,
           Customer_Status__c = 'Prospect'
@@ -158,9 +191,9 @@ global without sharing class LineWebhookHandler {
 
     Database.insert(prospects.values(), false, AccessLevel.SYSTEM_MODE);
     for (String userId : prospects.keySet()) {
-      Id accountId = prospects.get(userId).Id;
-      if (accountId != null) {
-        accountByLineId.put(userId, accountId);
+      Account created = prospects.get(userId);
+      if (created.Id != null) {
+        accountByLineId.put(userId, created);
       }
     }
 
@@ -172,7 +205,7 @@ global without sharing class LineWebhookHandler {
       WITH SYSTEM_MODE
     ];
     for (LINE_Message__c m : earlier) {
-      m.Account__c = accountByLineId.get(m.LINE_User_ID__c);
+      m.Account__c = accountByLineId.get(m.LINE_User_ID__c)?.Id;
     }
     Database.update(earlier, false, AccessLevel.SYSTEM_MODE);
   }

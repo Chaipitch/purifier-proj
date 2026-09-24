@@ -182,6 +182,33 @@ private class LineWebhookHandlerTest {
   }
 
   @IsTest
+  static void placeholderNameIsReplacedOnTheNextMessage() {
+    Id personType = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
+      .get('PersonAccount')
+      .getRecordTypeId();
+    insert new Account(
+      RecordTypeId = personType,
+      LastName = 'LINE friend _new',
+      LINE_User_ID__c = 'U_new',
+      Customer_Status__c = 'Prospect'
+    );
+    Test.setMock(HttpCalloutMock.class, new ProfileMock(200));
+
+    Test.startTest();
+    postSigned(events(textEvent('U_new', 'm5', 'hello again')));
+    Test.stopTest();
+
+    Assert.areEqual(
+      'สมหญิง ใจดี',
+      [SELECT LastName FROM Account WHERE LINE_User_ID__c = 'U_new'].LastName
+    );
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM Account WHERE LINE_User_ID__c = 'U_new']
+    );
+  }
+
+  @IsTest
   static void redeliveredEventsCreateNothingTwice() {
     Test.setMock(HttpCalloutMock.class, new ProfileMock(200));
     String body = events(
