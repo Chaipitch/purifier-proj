@@ -49,6 +49,34 @@ public with sharing class LineMessagingService {
     insert messages;
   }
 
+  // The customer's LINE display name, or null if LINE can't be reached or doesn't return one.
+  public static String fetchDisplayName(String lineUserId) {
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint(
+      'callout:LINE_Messaging_API/v2/bot/profile/' +
+      EncodingUtil.urlEncode(lineUserId, 'UTF-8')
+    );
+    req.setMethod('GET');
+    req.setTimeout(5000);
+    try {
+      HttpResponse res = new Http().send(req);
+      if (res.getStatusCode() != 200) {
+        return null;
+      }
+      Object name = ((Map<String, Object>) JSON.deserializeUntyped(
+          res.getBody()
+        ))
+        .get('displayName');
+      return name instanceof String && String.isNotBlank((String) name)
+        ? ((String) name).left(80)
+        : null;
+    } catch (CalloutException e) {
+      return null;
+    } catch (JSONException e) {
+      return null;
+    }
+  }
+
   public static PushResult pushText(String lineUserId, String text) {
     HttpRequest req = new HttpRequest();
     req.setEndpoint('callout:LINE_Messaging_API/v2/bot/message/push');

@@ -8,6 +8,11 @@
         <apexClass>LineWebhookHandler</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <externalCredentialPrincipalAccesses>
+        <enabled>true</enabled>
+        <externalCredentialPrincipal
+    >LINE_Messaging-LINE_Bot</externalCredentialPrincipal>
+    </externalCredentialPrincipalAccesses>
     <customSettingAccesses>
         <enabled>true</enabled>
         <name>LINE_Settings__c</name>

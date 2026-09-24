@@ -1,9 +1,12 @@
 // Called by the LINE platform through the public Site, so it runs as the Site guest user.
-// The guest user can't see Accounts or earlier messages, so lookups and the insert run in system
+// The guest user can't see Accounts or earlier messages, so queries and DML run in system
 // mode (at this API version they otherwise respect the running user's access even without sharing).
 // That is safe only because every request passes the X-Line-Signature check first.
 @RestResource(urlMapping='/line/webhook/*')
 global without sharing class LineWebhookHandler {
+  @TestVisible
+  private static final String FOLLOW_TEXT = '[Added the OA as a friend]';
+
   @HttpPost
   global static void receive() {
     RestRequest req = RestContext.request;
@@ -28,7 +31,7 @@ global without sharing class LineWebhookHandler {
     Map<String, Object> payload = (Map<String, Object>) JSON.deserializeUntyped(
       req.requestBody.toString()
     );
-    saveMessages((List<Object>) payload.get('events'));
+    processEvents((List<Object>) payload.get('events'));
     respond(res, 200, 'ok');
   }
 
@@ -48,31 +51,27 @@ global without sharing class LineWebhookHandler {
     return expected.equals(signature);
   }
 
-  private static void saveMessages(List<Object> events) {
+  private static void processEvents(List<Object> events) {
     if (events == null || events.isEmpty()) {
       return;
     }
 
-    List<Map<String, Object>> messageEvents = new List<Map<String, Object>>();
+    List<Map<String, Object>> relevant = new List<Map<String, Object>>();
     Set<String> userIds = new Set<String>();
-    Set<String> messageIds = new Set<String>();
+    Set<String> eventKeys = new Set<String>();
     for (Object item : events) {
       Map<String, Object> ev = (Map<String, Object>) item;
-      Map<String, Object> source = (Map<String, Object>) ev.get('source');
-      Map<String, Object> message = (Map<String, Object>) ev.get('message');
-      if (
-        ev.get('type') != 'message' ||
-        source == null ||
-        message == null ||
-        source.get('userId') == null
-      ) {
+      String type = (String) ev.get('type');
+      String userId = userIdOf(ev);
+      Boolean isMessage = type == 'message' && ev.get('message') != null;
+      if (userId == null || !(isMessage || type == 'follow')) {
         continue;
       }
-      messageEvents.add(ev);
-      userIds.add((String) source.get('userId'));
-      messageIds.add((String) message.get('id'));
+      relevant.add(ev);
+      userIds.add(userId);
+      eventKeys.add(eventKey(ev));
     }
-    if (messageEvents.isEmpty()) {
+    if (relevant.isEmpty()) {
       return;
     }
 
@@ -80,7 +79,7 @@ global without sharing class LineWebhookHandler {
     for (LINE_Message__c m : [
       SELECT LINE_Message_ID__c
       FROM LINE_Message__c
-      WHERE LINE_Message_ID__c IN :messageIds
+      WHERE LINE_Message_ID__c IN :eventKeys
       WITH SYSTEM_MODE
     ]) {
       alreadySaved.add(m.LINE_Message_ID__c);
@@ -98,30 +97,102 @@ global without sharing class LineWebhookHandler {
       }
     }
 
+    createProspects(userIds, accountByLineId);
+
     List<LINE_Message__c> toInsert = new List<LINE_Message__c>();
-    for (Map<String, Object> ev : messageEvents) {
-      Map<String, Object> message = (Map<String, Object>) ev.get('message');
-      String messageId = (String) message.get('id');
-      if (alreadySaved.contains(messageId)) {
+    for (Map<String, Object> ev : relevant) {
+      String key = eventKey(ev);
+      if (alreadySaved.contains(key)) {
         continue;
       }
-      String userId = (String) ((Map<String, Object>) ev.get('source'))
-        .get('userId');
+      String userId = userIdOf(ev);
+      Map<String, Object> message = (Map<String, Object>) ev.get('message');
       toInsert.add(
         new LINE_Message__c(
           Account__c = accountByLineId.get(userId),
           LINE_User_ID__c = userId,
-          LINE_Message_ID__c = messageId,
+          LINE_Message_ID__c = key,
           Direction__c = 'Inbound',
           Message_Type__c = 'Text',
-          Message_Body__c = bodyOf(message),
+          Message_Body__c = message == null ? FOLLOW_TEXT : bodyOf(message),
           Sent_At__c = sentAt(ev.get('timestamp'))
         )
       );
     }
-    // allOrNone=false: if LINE redelivers the same message concurrently, the unique
+    // allOrNone=false: if LINE redelivers the same event concurrently, the unique
     // LINE_Message_ID__c rejects the duplicate without failing the rest.
     Database.insert(toInsert, false, AccessLevel.SYSTEM_MODE);
+  }
+
+  // Every LINE user without an Account becomes a Prospect Person Account named after their
+  // LINE display name. The profile lookups are callouts, so they all run before the first
+  // DML in this transaction. Adds the new Account Ids to accountByLineId.
+  private static void createProspects(
+    Set<String> userIds,
+    Map<String, Id> accountByLineId
+  ) {
+    Id personType = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
+      .get('PersonAccount')
+      .getRecordTypeId();
+    Map<String, Account> prospects = new Map<String, Account>();
+    for (String userId : userIds) {
+      if (accountByLineId.containsKey(userId)) {
+        continue;
+      }
+      String name = LineMessagingService.fetchDisplayName(userId);
+      prospects.put(
+        userId,
+        new Account(
+          RecordTypeId = personType,
+          LastName = String.isBlank(name)
+            ? 'LINE friend ' + userId.right(4)
+            : name,
+          LINE_User_ID__c = userId,
+          Customer_Status__c = 'Prospect'
+        )
+      );
+    }
+    if (prospects.isEmpty()) {
+      return;
+    }
+
+    Database.insert(prospects.values(), false, AccessLevel.SYSTEM_MODE);
+    for (String userId : prospects.keySet()) {
+      Id accountId = prospects.get(userId).Id;
+      if (accountId != null) {
+        accountByLineId.put(userId, accountId);
+      }
+    }
+
+    // Messages that arrived before the Account existed were saved without one.
+    List<LINE_Message__c> earlier = [
+      SELECT Id, LINE_User_ID__c
+      FROM LINE_Message__c
+      WHERE LINE_User_ID__c IN :prospects.keySet() AND Account__c = NULL
+      WITH SYSTEM_MODE
+    ];
+    for (LINE_Message__c m : earlier) {
+      m.Account__c = accountByLineId.get(m.LINE_User_ID__c);
+    }
+    Database.update(earlier, false, AccessLevel.SYSTEM_MODE);
+  }
+
+  private static String userIdOf(Map<String, Object> ev) {
+    Map<String, Object> source = (Map<String, Object>) ev.get('source');
+    return source == null ? null : (String) source.get('userId');
+  }
+
+  // Unique key per LINE event, stored in LINE_Message_ID__c to skip redeliveries.
+  private static String eventKey(Map<String, Object> ev) {
+    Map<String, Object> message = (Map<String, Object>) ev.get('message');
+    if (message != null) {
+      return (String) message.get('id');
+    }
+    Object eventId = ev.get('webhookEventId');
+    return 'follow:' +
+      (eventId != null
+        ? (String) eventId
+        : userIdOf(ev) + ':' + String.valueOf(ev.get('timestamp')));
   }
 
   private static String bodyOf(Map<String, Object> message) {
