@@ -33,7 +33,7 @@
   height: 480px;
   overflow-y: auto;
   padding: var(--slds-g-spacing-3, 0.75rem) var(--slds-g-spacing-4, 1rem);
-  background: var(--slds-g-color-neutral-base-95, #f3f3f3);
+  background: #e7f6ff;
 }
 
 .chat__status {
