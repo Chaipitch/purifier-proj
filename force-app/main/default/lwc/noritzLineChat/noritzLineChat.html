@@ -42,13 +42,13 @@
             </template>
             <template lwc:if={msg.linkUrl}>
               <div class="bubble__action">
-                <button
-                  class="slds-button slds-button_neutral link-button"
-                  data-url={msg.linkUrl}
-                  onclick={handleOpenLink}
+                <a
+                  class="bubble__link"
+                  href={msg.linkUrl}
+                  target="_blank"
+                  rel="noopener"
+                  >{msg.linkUrl}</a
                 >
-                  {msg.linkLabel}
-                </button>
               </div>
             </template>
           </div>
@@ -65,8 +65,8 @@
     <footer class="chat__composer">
       <textarea
         class="slds-textarea chat__input"
-        rows="2"
-        placeholder="Type a message. Enter to send, Shift+Enter for a new line"
+        rows="1"
+        placeholder="Type a message."
         aria-label="Message"
         lwc:ref="input"
         oninput={handleDraftChange}

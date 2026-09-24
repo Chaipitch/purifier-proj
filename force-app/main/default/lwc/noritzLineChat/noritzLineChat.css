@@ -33,7 +33,7 @@
   height: 480px;
   overflow-y: auto;
   padding: var(--slds-g-spacing-3, 0.75rem) var(--slds-g-spacing-4, 1rem);
-  background: #e7f6ff;
+  background: linear-gradient(180deg, #bde6ff, #e7f6ff);
 }
 
 .chat__status {
@@ -84,11 +84,12 @@
   margin-top: var(--slds-g-spacing-2, 0.5rem);
 }
 
-.link-button {
-  width: 100%;
-  justify-content: center;
-  color: #06c755;
-  font-weight: 700;
+.bubble__link,
+.bubble__link:hover,
+.bubble__link:visited {
+  color: #fff;
+  text-decoration: underline;
+  word-break: break-all;
 }
 
 .meta {
@@ -107,7 +108,7 @@
 .chat__composer {
   display: flex;
   gap: var(--slds-g-spacing-2, 0.5rem);
-  align-items: flex-end;
+  align-items: center;
   padding: var(--slds-g-spacing-3, 0.75rem) var(--slds-g-spacing-4, 1rem);
   border-top: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
 }

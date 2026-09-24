@@ -9,10 +9,7 @@ import sendMessage from "@salesforce/apex/NoritzLineChatController.sendMessage";
 const CHANNEL = "/event/LINE_Chat_Refresh__e";
 const FALLBACK_POLL_SECONDS = 3;
 const URL_PATTERN = /https:\/\/\S+/;
-const LINK_LABELS = {
-  "Checkout Link": "Open checkout",
-  "Payment Retry": "Update payment method"
-};
+const LINK_TYPES = new Set(["Checkout Link", "Payment Retry"]);
 
 const timeFormat = new Intl.DateTimeFormat("en-GB", {
   day: "2-digit",
@@ -143,7 +140,7 @@ export default class NoritzLineChat extends LightningElement {
       const isOutbound = m.Direction__c === "Outbound";
       const body = m.Message_Body__c || "";
       const linkUrl =
-        isOutbound && LINK_LABELS[m.Message_Type__c]
+        isOutbound && LINK_TYPES.has(m.Message_Type__c)
           ? body.match(URL_PATTERN)?.[0]
           : undefined;
       return {
@@ -151,7 +148,6 @@ export default class NoritzLineChat extends LightningElement {
         text: linkUrl ? body.replace(linkUrl, "").trim() : body,
         time: m.Sent_At__c ? timeFormat.format(new Date(m.Sent_At__c)) : "",
         linkUrl,
-        linkLabel: linkUrl ? LINK_LABELS[m.Message_Type__c] : undefined,
         failed: isOutbound && m.Delivery_Status__c === "Failed",
         error: m.Delivery_Error__c,
         rowClass: isOutbound ? "row row_outbound" : "row row_inbound",
@@ -172,10 +168,6 @@ export default class NoritzLineChat extends LightningElement {
       event.preventDefault();
       this.handleSend();
     }
-  }
-
-  handleOpenLink(event) {
-    window.open(event.currentTarget.dataset.url, "_blank", "noopener");
   }
 
   async handleSend() {
