@@ -19,7 +19,7 @@ Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.p
 | Scenario 1 — Quick Signup                                    | ✅ Done    | One-click button on the Contract                                    |
 | Scenario 2 — Payment Failure & Auto Recovery                 | ✅ Done    | Record-triggered Flow + one-click button                            |
 | Reset script                                                 | ✅ Done    | `scripts/apex/reset_demo.apex`                                      |
-| Apex tests                                                   | ✅ 22 pass | Coverage 95–100% on every class                                     |
+| Apex tests                                                   | ✅ 24 pass | Coverage 95–100% on every class                                     |
 | Stripe webhook endpoint (Task 10)                            | ⏸ Deferred | Second way to trigger Scenario 2, from Postman                      |
 | Header badge, payment timeline, asset card LWCs              | ⏸ Deferred | User chose the chat widget only; standard components cover the rest |
 | Console app "NORITZ Subscription Console" (Task 3)           | ⏸ Deferred | Demo runs in the existing **Service Console** app                   |
@@ -105,6 +105,25 @@ Run the reset command from step 1, then reload Somchai's tab once.
 - [x] Token and secret were entered in Setup by the user; nothing secret is in source.
 - [x] Somchai's `LINE_User_ID__c` is linked to the user's test LINE account.
 - Webhook URL: `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce-sites.com/line/services/apexrest/line/webhook`
+
+### New LINE friends become Prospect accounts (2026-09-24)
+
+- [x] Follow event (someone adds the OA) → Prospect Person Account named after their LINE display name, with their LINE id; chat line "[Added the OA as a friend]"
+- [x] A message from an unknown LINE user does the same (covers people who followed before this existed)
+- [x] Earlier unattached messages from that LINE id are attached to the new account
+- [x] Profile lookup fails → account is still created as "LINE friend ····1234" (last 4 characters of their LINE id)
+- [x] Redelivered events create no second account or message
+- [x] Guest permission set now includes the LINE credential (for the profile lookup only)
+- [x] Apex tests: 24 passing
+- [ ] Live test with a second LINE account adding the OA
+
+### Switching to a different LINE OA
+
+1. New channel access token → Setup → Named Credentials → External Credentials → **LINE Messaging** → principal **LINE_Bot** → edit parameter `token` (keep the name lowercase).
+2. New channel secret → Setup → Custom Settings → **LINE Settings** → Manage → edit org default.
+3. New channel in LINE Developers: same webhook URL, Verify, **Use webhook** on; OA Manager: auto-response off. Turn the webhook off on the old channel.
+4. LINE user ids differ per provider. When your phone adds the new OA, it now becomes a **new Prospect account**. To keep demoing as Somchai: copy that account's LINE User ID into Somchai's record, delete the new Prospect account, then run the reset script.
+5. Don't redeploy `externalCredentials/` to do this.
 
 ### Scenario 1 — Quick Signup
 
