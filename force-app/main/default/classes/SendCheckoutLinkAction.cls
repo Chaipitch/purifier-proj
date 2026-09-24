@@ -14,7 +14,12 @@ public with sharing class SendCheckoutLinkAction {
   public static Result send(Id contractId) {
     Result result = new Result();
     Contract c = [
-      SELECT AccountId, Stripe_Sub_ID__c, Subscription_Plan__c
+      SELECT
+        AccountId,
+        Account.FirstName,
+        Account.LastName,
+        Stripe_Sub_ID__c,
+        Subscription_Plan__c
       FROM Contract
       WHERE Id = :contractId
     ];
@@ -29,6 +34,7 @@ public with sharing class SendCheckoutLinkAction {
       ? ''
       : ' ' + c.Subscription_Plan__c;
     String body =
+      LineMessagingService.addressAs(c.Account.FirstName, c.Account.LastName) +
       'ขอบคุณที่เลือก NORITZ ค่ะ กรุณาชำระเงินแพ็กเกจ' +
       plan +
       ' ผ่านลิงก์ด้านล่างเพื่อเริ่มใช้บริการค่ะ\n' +

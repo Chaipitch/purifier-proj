@@ -19,7 +19,7 @@ Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.p
 | Scenario 1 — Quick Signup                                    | ✅ Done    | One-click button on the Contract                                    |
 | Scenario 2 — Payment Failure & Auto Recovery                 | ✅ Done    | Record-triggered Flow + one-click button                            |
 | Reset script                                                 | ✅ Done    | `scripts/apex/reset_demo.apex`                                      |
-| Apex tests                                                   | ✅ 25 pass | Coverage 95–100% on every class                                     |
+| Apex tests                                                   | ✅ 26 pass | Coverage 95–100% on every class                                     |
 | Stripe webhook endpoint (Task 10)                            | ⏸ Deferred | Second way to trigger Scenario 2, from Postman                      |
 | Header badge, payment timeline, asset card LWCs              | ⏸ Deferred | User chose the chat widget only; standard components cover the rest |
 | Console app "NORITZ Subscription Console" (Task 3)           | ⏸ Deferred | Demo runs in the existing **Service Console** app                   |

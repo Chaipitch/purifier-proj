@@ -65,6 +65,9 @@ private class SendCheckoutLinkActionTest {
     );
     Assert.isTrue(msg.Message_Body__c.contains('Premium (1,500 THB)'));
     Assert.isTrue(
+      msg.Message_Body__c.startsWith('คุณ Test ขอบคุณที่เลือก NORITZ')
+    );
+    Assert.isTrue(
       mock.lastBody.contains('checkout.stripe.com/demo/sub_demo_12345')
     );
   }

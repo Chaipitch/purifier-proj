@@ -7,6 +7,20 @@ private class LineMessagingServiceTest {
   }
 
   @IsTest
+  static void addressesCustomerByFirstNameThenLastName() {
+    Assert.areEqual(
+      'คุณ Somchai ',
+      LineMessagingService.addressAs('Somchai', 'Sukhumvit')
+    );
+    Assert.areEqual('คุณ Meng ', LineMessagingService.addressAs(null, 'Meng'));
+    Assert.areEqual(
+      '',
+      LineMessagingService.addressAs(null, 'LINE friend ae43')
+    );
+    Assert.areEqual('', LineMessagingService.addressAs(null, null));
+  }
+
+  @IsTest
   static void reportsCalloutFailure() {
     Test.setMock(HttpCalloutMock.class, new UnreachableMock());
 

@@ -69,6 +69,9 @@ private class SimulatePaymentFailureActionTest {
       FROM LINE_Message__c
     ];
     Assert.areEqual('Payment Retry', msg.Message_Type__c);
+    Assert.isTrue(
+      msg.Message_Body__c.startsWith('คุณ Test ชำระค่าบริการรายเดือนไม่สำเร็จ')
+    );
     Assert.areEqual('Sent', msg.Delivery_Status__c);
     Assert.areEqual(c.AccountId, msg.Account__c);
     Assert.isTrue(

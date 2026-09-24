@@ -25,7 +25,13 @@ public with sharing class SendPaymentRetryAction {
     public void execute(QueueableContext context) {
       List<LINE_Message__c> messages = new List<LINE_Message__c>();
       for (Contract c : [
-        SELECT Id, AccountId, Account.LINE_User_ID__c, Stripe_Sub_ID__c
+        SELECT
+          Id,
+          AccountId,
+          Account.FirstName,
+          Account.LastName,
+          Account.LINE_User_ID__c,
+          Stripe_Sub_ID__c
         FROM Contract
         WHERE Id IN :contractIds
       ]) {
@@ -33,6 +39,10 @@ public with sharing class SendPaymentRetryAction {
           ? (String) c.Id
           : c.Stripe_Sub_ID__c;
         String body =
+          LineMessagingService.addressAs(
+            c.Account.FirstName,
+            c.Account.LastName
+          ) +
           'ชำระค่าบริการรายเดือนไม่สำเร็จค่ะ กรุณาอัปเดตวิธีการชำระเงินผ่านลิงก์นี้ค่ะ\n' +
           RETRY_BASE_URL +
           reference +

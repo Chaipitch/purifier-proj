@@ -6,7 +6,6 @@
 global without sharing class LineWebhookHandler {
   @TestVisible
   private static final String FOLLOW_TEXT = '[Added the OA as a friend]';
-  private static final String PLACEHOLDER_PREFIX = 'LINE friend ';
 
   @HttpPost
   global static void receive() {
@@ -137,7 +136,8 @@ global without sharing class LineWebhookHandler {
   }
 
   private static Boolean isPlaceholder(String lastName) {
-    return lastName != null && lastName.startsWith(PLACEHOLDER_PREFIX);
+    return lastName != null &&
+      lastName.startsWith(LineMessagingService.PLACEHOLDER_PREFIX);
   }
 
   // An earlier profile lookup failed: use this event's lookup to give the account its real name.
@@ -178,7 +178,7 @@ global without sharing class LineWebhookHandler {
         new Account(
           RecordTypeId = personType,
           LastName = String.isBlank(name)
-            ? PLACEHOLDER_PREFIX + userId.right(4)
+            ? LineMessagingService.PLACEHOLDER_PREFIX + userId.right(4)
             : name,
           LINE_User_ID__c = userId,
           Customer_Status__c = 'Prospect'
