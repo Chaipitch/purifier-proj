@@ -19,7 +19,7 @@ Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.p
 | Scenario 1 — Quick Signup                                    | ✅ Done    | One-click button on the Contract                                    |
 | Scenario 2 — Payment Failure & Auto Recovery                 | ✅ Done    | Record-triggered Flow + one-click button                            |
 | Reset script                                                 | ✅ Done    | `scripts/apex/reset_demo.apex`                                      |
-| Apex tests                                                   | ✅ 24 pass | Coverage 95–100% on every class                                     |
+| Apex tests                                                   | ✅ 25 pass | Coverage 95–100% on every class                                     |
 | Stripe webhook endpoint (Task 10)                            | ⏸ Deferred | Second way to trigger Scenario 2, from Postman                      |
 | Header badge, payment timeline, asset card LWCs              | ⏸ Deferred | User chose the chat widget only; standard components cover the rest |
 | Console app "NORITZ Subscription Console" (Task 3)           | ⏸ Deferred | Demo runs in the existing **Service Console** app                   |
@@ -114,8 +114,9 @@ Run the reset command from step 1, then reload Somchai's tab once.
 - [x] Profile lookup fails → account is still created as "LINE friend ····1234" (last 4 characters of their LINE id)
 - [x] Redelivered events create no second account or message
 - [x] Guest permission set now includes the LINE credential (for the profile lookup only)
-- [x] Apex tests: 24 passing
-- [ ] Live test with a second LINE account adding the OA
+- [x] Apex tests: 25 passing
+- [x] If a lookup failed earlier, the next message retries it and renames the placeholder account
+- [x] Live test (2026-09-24): a second LINE account (Meng) added the OA → Prospect account created, renamed to "Meng" on the next message
 
 ### Switching to a different LINE OA
 
@@ -188,6 +189,7 @@ Run the reset command from step 1, then reload Somchai's tab once.
 - **Stale components after deploy:** reload twice before rehearsing.
 - **Contract status is one-way into Activated:** contracts are created as Pending Payment, then set Active; an Active contract can never go back to Pending Payment and can't be deleted.
 - **Shared org:** other demo customers (Somsri Tephaluk, Somsak Bangna, contracts 00000102/103) were added by the Kamonphob user on 2026-09-23. The reset leaves them alone, but the recovery Flow runs for **any** failed payment.
+- **Guest user and the LINE credential:** besides principal access, the guest permission set needs Read on User External Credentials, or the profile lookup fails silently (the account gets a placeholder name).
 - **Standard related lists** (e.g. Payment History on the Account) aren't pushed live; the highlights, Path and chat are.
 
 ---
