@@ -23,7 +23,13 @@ private class DemoResetActionTest {
       LastName = 'Other',
       Customer_Status__c = 'Payment Suspended'
     );
-    insert new List<Account>{ somchai, meng, other };
+    Account newFriend = new Account(
+      RecordTypeId = personType,
+      LastName = 'New Friend',
+      LINE_User_ID__c = 'U_new',
+      Customer_Status__c = 'Payment Suspended'
+    );
+    insert new List<Account>{ somchai, meng, other, newFriend };
 
     List<Contract> contracts = new List<Contract>();
     for (Account a : new List<Account>{ somchai, meng, other }) {
@@ -38,9 +44,12 @@ private class DemoResetActionTest {
       );
     }
     insert contracts;
+    // Meng's contract has been through a payment failure.
+    contracts[1].Status = 'Payment Failed';
+    update contracts[1];
 
     List<LINE_Message__c> messages = new List<LINE_Message__c>();
-    for (Account a : new List<Account>{ somchai, meng, other }) {
+    for (Account a : new List<Account>{ somchai, meng, other, newFriend }) {
       messages.add(
         new LINE_Message__c(
           Account__c = a.Id,
@@ -62,7 +71,7 @@ private class DemoResetActionTest {
   }
 
   @IsTest
-  static void resetsSomchaiAndMengOnly() {
+  static void resetsSomchaiAndLineFriendsOnly() {
     Test.startTest();
     DemoResetAction.reset();
     Test.stopTest();
@@ -116,6 +125,23 @@ private class DemoResetActionTest {
       .Customer_Status__c
     );
 
+    Assert.areEqual(
+      'Active',
+      [SELECT Status FROM Contract WHERE Account.Name = 'Meng'].Status
+    );
+
+    // Linked to LINE but no active contract: back to Prospect, chat trimmed.
+    Assert.areEqual(
+      'Prospect',
+      [SELECT Customer_Status__c FROM Account WHERE Name = 'New Friend']
+      .Customer_Status__c
+    );
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM LINE_Message__c WHERE Account__r.Name = 'New Friend']
+    );
+
+    // Not linked to LINE: untouched.
     Assert.areEqual(
       2,
       [SELECT COUNT() FROM LINE_Message__c WHERE Account__r.Name = 'Other']

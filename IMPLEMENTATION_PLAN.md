@@ -33,7 +33,7 @@ Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.p
 
 ### Before the audience arrives
 
-1. **Reset the demo** (safe to run any number of times; only touches Somchai and Meng): click **Reset Demo** on any Contract page. The page reloads itself. From a terminal instead:
+1. **Reset the demo** (safe to run any number of times; touches Somchai and customers with a LINE User ID): click **Reset Demo** on any Contract page. The page reloads itself. From a terminal instead:
    ```bash
    sf apex run --file scripts/apex/reset_demo.apex --target-org noritz
    ```
@@ -140,7 +140,7 @@ Click **Reset Demo** on the Contract tab. The page reloads after the green toast
 
 ### Reset
 
-- [x] `DemoResetAction.reset()`: deletes Somchai's payments and chat; contract → Active, Premium, `sub_demo_12345`, next billing 1st of this month; account → Active; 2 successful payments; 3 chat messages. Meng: payments and chat deleted except the "[Added the OA as a friend]" line, contract Payment Failed → Active, account → Active. Other customers are untouched.
+- [x] `DemoResetAction.reset()`: deletes Somchai's payments and chat; contract → Active, Premium, `sub_demo_12345`, next billing 1st of this month; account → Active; 2 successful payments; 3 chat messages. Every other customer with a LINE User ID: payments and chat deleted except the "[Added the OA as a friend]" line, Payment Failed contracts → Active, account → Active if it has an Active contract, otherwise Prospect. Customers without a LINE User ID are untouched.
 - [x] **Reset Demo** button on the Contract page (third action; headless LWC `noritzResetDemo`), toast then page reload, for the non-technical BA. `scripts/apex/reset_demo.apex` now just calls `DemoResetAction.reset()`. Tests: `DemoResetActionTest` (3).
 
 ---

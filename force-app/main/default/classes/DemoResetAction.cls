@@ -1,16 +1,16 @@
 // "Reset Demo" button on the Contract page: puts the demo customers back to their pre-demo state.
-// Safe to run any number of times. Touches only Somchai Sukhumvit and Meng (the live LINE test
-// friend); other customers are left alone. scripts/apex/reset_demo.apex calls the same code.
+// Safe to run any number of times. Touches Somchai Sukhumvit and every customer linked to LINE;
+// customers without a LINE User ID are left alone. scripts/apex/reset_demo.apex calls the same code.
 public with sharing class DemoResetAction {
   private static final String FOLLOW_TEXT = '[Added the OA as a friend]';
 
   @AuraEnabled
   public static void reset() {
-    resetSomchai();
-    resetMeng();
+    Id somchaiId = resetSomchai();
+    resetLineFriends(somchaiId);
   }
 
-  private static void resetSomchai() {
+  private static Id resetSomchai() {
     List<Account> accounts = [
       SELECT Id, LINE_User_ID__c
       FROM Account
@@ -65,38 +65,41 @@ public with sharing class DemoResetAction {
       message(
         somchai,
         'Outbound',
-        'สวัสดีค่ะคุณสมชาย มี 2 แพ็กเกจค่ะ Standard 900 บาท/เดือน และ Premium 1,500 บาท/เดือน รวมเปลี่ยนไส้กรองฟรีค่ะ',
+        'สวัสดีค่ะคุณ Somchai มี 2 แพ็กเกจค่ะ Standard 900 บาท/เดือน และ Premium 1,500 บาท/เดือน รวมเปลี่ยนไส้กรองฟรีค่ะ',
         now.addMinutes(-28)
       ),
       message(somchai, 'Inbound', 'เอา Premium ครับ', now.addMinutes(-25))
     };
+    return somchai.Id;
   }
 
-  // Meng: the account auto-created when the tester added the OA. Its contract has been
-  // activated, so it can't go back to Pending Payment or be deleted; reset it to Active.
-  // Keeps only the "added as a friend" message so the chat shows where the friendship began.
-  private static void resetMeng() {
-    List<Account> accounts = [
-      SELECT Id
-      FROM Account
-      WHERE Name = 'Meng'
-      LIMIT 1
-    ];
-    if (accounts.isEmpty()) {
+  // Everyone else with a LINE User ID (for example people who added the OA while testing).
+  // Payments and chat are cleared except the "added as a friend" line. Payment Failed contracts
+  // go back to Active: an activated contract can't return to Pending Payment or be deleted.
+  // The customer is Active if they have an Active contract, otherwise Prospect.
+  private static void resetLineFriends(Id somchaiId) {
+    Map<Id, Account> friends = new Map<Id, Account>(
+      [
+        SELECT Id
+        FROM Account
+        WHERE LINE_User_ID__c != NULL AND Id != :somchaiId
+      ]
+    );
+    if (friends.isEmpty()) {
       return;
     }
-    Account meng = accounts[0];
+    Set<Id> friendIds = friends.keySet();
 
     delete [
       SELECT Id
       FROM Payment_History__c
-      WHERE Contract__r.AccountId = :meng.Id
+      WHERE Contract__r.AccountId IN :friendIds
     ];
     List<LINE_Message__c> chatter = new List<LINE_Message__c>();
     for (LINE_Message__c m : [
       SELECT Id, Direction__c, Message_Body__c
       FROM LINE_Message__c
-      WHERE Account__c = :meng.Id
+      WHERE Account__c IN :friendIds
     ]) {
       if (m.Direction__c != 'Inbound' || m.Message_Body__c != FOLLOW_TEXT) {
         chatter.add(m);
@@ -105,19 +108,27 @@ public with sharing class DemoResetAction {
     delete chatter;
 
     List<Contract> contracts = [
-      SELECT Id, Status
+      SELECT Id, AccountId, Status
       FROM Contract
-      WHERE AccountId = :meng.Id
+      WHERE AccountId IN :friendIds
     ];
+    Set<Id> withActiveContract = new Set<Id>();
     for (Contract c : contracts) {
       if (c.Status == 'Payment Failed') {
         c.Status = 'Active';
       }
+      if (c.Status == 'Active') {
+        withActiveContract.add(c.AccountId);
+      }
     }
     update contracts;
 
-    meng.Customer_Status__c = contracts.isEmpty() ? 'Prospect' : 'Active';
-    update meng;
+    for (Account a : friends.values()) {
+      a.Customer_Status__c = withActiveContract.contains(a.Id)
+        ? 'Active'
+        : 'Prospect';
+    }
+    update friends.values();
   }
 
   // setMessage so tests and logs see the text, not "Script-thrown exception".
