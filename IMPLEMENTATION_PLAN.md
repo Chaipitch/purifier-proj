@@ -18,7 +18,7 @@ Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.p
 | Live refresh                                                 | ✅ Done    | Platform event `LINE_Chat_Refresh__e` + empApi                      |
 | Scenario 1 — Quick Signup                                    | ✅ Done    | One-click button on the Contract                                    |
 | Scenario 2 — Payment Failure & Auto Recovery                 | ✅ Done    | Record-triggered Flow + one-click button                            |
-| Reset script                                                 | ✅ Done    | `scripts/apex/reset_demo.apex`                                      |
+| Reset (button + script)                                      | ✅ Done    | **Reset Demo** on the Contract page; `scripts/apex/reset_demo.apex` |
 | Apex tests                                                   | ✅ 26 pass | Coverage 95–100% on every class                                     |
 | Stripe webhook endpoint (Task 10)                            | ⏸ Deferred | Second way to trigger Scenario 2, from Postman                      |
 | Header badge, payment timeline, asset card LWCs              | ⏸ Deferred | User chose the chat widget only; standard components cover the rest |
@@ -33,7 +33,7 @@ Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.p
 
 ### Before the audience arrives
 
-1. **Reset the demo** (safe to run any number of times; only touches Somchai):
+1. **Reset the demo** (safe to run any number of times; only touches Somchai and Meng): click **Reset Demo** on any Contract page. The page reloads itself. From a terminal instead:
    ```bash
    sf apex run --file scripts/apex/reset_demo.apex --target-org noritz
    ```
@@ -73,7 +73,7 @@ Switch to the Contract tab: Path **Pending Payment → Active → Payment Failed
 
 ### Beat 5 — Reset for the next run
 
-Run the reset command from step 1, then reload Somchai's tab once.
+Click **Reset Demo** on the Contract tab. The page reloads after the green toast.
 
 ### If something goes wrong on stage
 
@@ -140,7 +140,8 @@ Run the reset command from step 1, then reload Somchai's tab once.
 
 ### Reset
 
-- [x] `scripts/apex/reset_demo.apex`: deletes Somchai's payments and chat; contract → Active, Premium, `sub_demo_12345`, next billing 1st of this month; account → Active; 2 successful payments; 3 chat messages. Other customers are untouched.
+- [x] `DemoResetAction.reset()`: deletes Somchai's payments and chat; contract → Active, Premium, `sub_demo_12345`, next billing 1st of this month; account → Active; 2 successful payments; 3 chat messages. Meng: payments and chat deleted except the "[Added the OA as a friend]" line, contract Payment Failed → Active, account → Active. Other customers are untouched.
+- [x] **Reset Demo** button on the Contract page (third action; headless LWC `noritzResetDemo`), toast then page reload, for the non-technical BA. `scripts/apex/reset_demo.apex` now just calls `DemoResetAction.reset()`. Tests: `DemoResetActionTest` (3).
 
 ---
 

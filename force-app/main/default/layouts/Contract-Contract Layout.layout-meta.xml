@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Layout xmlns="http://soap.sforce.com/2006/04/metadata">
-    <emailDefault>false</emailDefault>
-    <headers>PersonalTagging</headers>
-    <headers>PublicTagging</headers>
     <layoutSections>
         <customLabel>false</customLabel>
         <detailHeading>false</detailHeading>
@@ -24,18 +21,6 @@
             <layoutItems>
                 <behavior>Required</behavior>
                 <field>AccountId</field>
-            </layoutItems>
-            <layoutItems>
-                <behavior>Edit</behavior>
-                <field>CustomerSignedId</field>
-            </layoutItems>
-            <layoutItems>
-                <behavior>Edit</behavior>
-                <field>CustomerSignedTitle</field>
-            </layoutItems>
-            <layoutItems>
-                <behavior>Edit</behavior>
-                <field>CustomerSignedDate</field>
             </layoutItems>
             <layoutItems>
                 <behavior>Edit</behavior>
@@ -69,15 +54,15 @@
             </layoutItems>
             <layoutItems>
                 <behavior>Edit</behavior>
-                <field>OwnerExpirationNotice</field>
+                <field>CustomerSignedTitle</field>
             </layoutItems>
             <layoutItems>
                 <behavior>Edit</behavior>
-                <field>CompanySignedId</field>
+                <field>CustomerSignedId</field>
             </layoutItems>
             <layoutItems>
                 <behavior>Edit</behavior>
-                <field>CompanySignedDate</field>
+                <field>CustomerSignedDate</field>
             </layoutItems>
         </layoutColumns>
         <style>TwoColumnsTopToBottom</style>
@@ -90,7 +75,7 @@
         <layoutColumns>
             <layoutItems>
                 <behavior>Edit</behavior>
-                <field>BillingAddress</field>
+                <field>Description</field>
             </layoutItems>
         </layoutColumns>
         <layoutColumns />
@@ -128,22 +113,14 @@
         <detailHeading>false</detailHeading>
         <editHeading>true</editHeading>
         <label>Description Information</label>
-        <layoutColumns>
-            <layoutItems>
-                <behavior>Edit</behavior>
-                <field>SpecialTerms</field>
-            </layoutItems>
-            <layoutItems>
-                <behavior>Edit</behavior>
-                <field>Description</field>
-            </layoutItems>
-        </layoutColumns>
+        <layoutColumns />
         <style>OneColumn</style>
     </layoutSections>
     <layoutSections>
-        <customLabel>false</customLabel>
+        <customLabel>true</customLabel>
         <detailHeading>false</detailHeading>
         <editHeading>true</editHeading>
+        <label>Custom Links</label>
         <layoutColumns />
         <layoutColumns />
         <layoutColumns />
@@ -165,54 +142,59 @@
             <sortOrder>1</sortOrder>
         </platformActionListItems>
         <platformActionListItems>
-            <actionName>NewContact</actionName>
+            <actionName>Contract.Reset_Demo</actionName>
             <actionType>QuickAction</actionType>
             <sortOrder>2</sortOrder>
         </platformActionListItems>
         <platformActionListItems>
-            <actionName>NewOpportunity</actionName>
+            <actionName>NewContact</actionName>
             <actionType>QuickAction</actionType>
             <sortOrder>3</sortOrder>
         </platformActionListItems>
         <platformActionListItems>
-            <actionName>NewCase</actionName>
+            <actionName>NewOpportunity</actionName>
             <actionType>QuickAction</actionType>
             <sortOrder>4</sortOrder>
         </platformActionListItems>
         <platformActionListItems>
-            <actionName>NewLead</actionName>
+            <actionName>NewCase</actionName>
             <actionType>QuickAction</actionType>
             <sortOrder>5</sortOrder>
         </platformActionListItems>
         <platformActionListItems>
-            <actionName>Edit</actionName>
-            <actionType>StandardButton</actionType>
+            <actionName>NewLead</actionName>
+            <actionType>QuickAction</actionType>
             <sortOrder>6</sortOrder>
         </platformActionListItems>
         <platformActionListItems>
-            <actionName>Delete</actionName>
+            <actionName>Edit</actionName>
             <actionType>StandardButton</actionType>
             <sortOrder>7</sortOrder>
         </platformActionListItems>
         <platformActionListItems>
-            <actionName>Clone</actionName>
+            <actionName>Delete</actionName>
             <actionType>StandardButton</actionType>
             <sortOrder>8</sortOrder>
         </platformActionListItems>
         <platformActionListItems>
-            <actionName>ChangeOwnerOne</actionName>
+            <actionName>Clone</actionName>
             <actionType>StandardButton</actionType>
             <sortOrder>9</sortOrder>
         </platformActionListItems>
         <platformActionListItems>
-            <actionName>Activate</actionName>
+            <actionName>ChangeOwnerOne</actionName>
             <actionType>StandardButton</actionType>
             <sortOrder>10</sortOrder>
         </platformActionListItems>
         <platformActionListItems>
-            <actionName>PrintableView</actionName>
+            <actionName>Activate</actionName>
             <actionType>StandardButton</actionType>
             <sortOrder>11</sortOrder>
+        </platformActionListItems>
+        <platformActionListItems>
+            <actionName>PrintableView</actionName>
+            <actionType>StandardButton</actionType>
+            <sortOrder>12</sortOrder>
         </platformActionListItems>
     </platformActionList>
     <relatedContent>
@@ -253,10 +235,15 @@
         <relatedList>Payment_History__c.Contract__c</relatedList>
     </relatedLists>
     <relatedObjects>AccountId</relatedObjects>
-    <runAssignmentRulesDefault>false</runAssignmentRulesDefault>
-    <showEmailCheckbox>true</showEmailCheckbox>
+    <showEmailCheckbox>false</showEmailCheckbox>
     <showHighlightsPanel>false</showHighlightsPanel>
     <showInteractionLogPanel>false</showInteractionLogPanel>
-    <showRunAssignmentRulesCheckbox>true</showRunAssignmentRulesCheckbox>
+    <showRunAssignmentRulesCheckbox>false</showRunAssignmentRulesCheckbox>
     <showSubmitAndAttachButton>false</showSubmitAndAttachButton>
+    <summaryLayout>
+        <masterLabel>00hgK00000Jt9NM</masterLabel>
+        <sizeX>4</sizeX>
+        <sizeY>0</sizeY>
+        <summaryLayoutStyle>Default</summaryLayoutStyle>
+    </summaryLayout>
 </Layout>
