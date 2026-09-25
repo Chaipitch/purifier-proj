@@ -1,5 +1,5 @@
 // Puts the demo back to its pre-demo state. Safe to run repeatedly.
-// Touches only Somchai Sukhumvit's records; other customers are left alone.
+// Touches only Somchai Sukhumvit and Meng (the live LINE test friend); other customers are left alone.
 // sf apex run --file scripts/apex/reset_demo.apex --target-org noritz
 
 Account somchai = [SELECT Id, LINE_User_ID__c FROM Account WHERE Name = 'Somchai Sukhumvit' LIMIT 1];
@@ -54,3 +54,35 @@ insert new List<LINE_Message__c>{
         Sent_At__c = now.addMinutes(-25)
     )
 };
+
+// Meng: the account auto-created when the tester added the OA. Its contract has been
+// activated, so it can't go back to Pending Payment or be deleted; reset it to Active.
+// Keeps only the "added as a friend" message so the chat shows where the friendship began.
+List<Account> mengs = [SELECT Id FROM Account WHERE Name = 'Meng' LIMIT 1];
+if (!mengs.isEmpty()) {
+    Account meng = mengs[0];
+    delete [SELECT Id FROM Payment_History__c WHERE Contract__r.AccountId = :meng.Id];
+    delete [
+        SELECT Id FROM LINE_Message__c
+        WHERE Account__c = :meng.Id AND (Direction__c = 'Outbound' OR Message_Type__c != 'Text')
+    ];
+    List<LINE_Message__c> inbound = [SELECT Id, Message_Body__c FROM LINE_Message__c WHERE Account__c = :meng.Id];
+    List<LINE_Message__c> chatter = new List<LINE_Message__c>();
+    for (LINE_Message__c m : inbound) {
+        if (m.Message_Body__c != '[Added the OA as a friend]') {
+            chatter.add(m);
+        }
+    }
+    delete chatter;
+
+    List<Contract> mengContracts = [SELECT Id, Status FROM Contract WHERE AccountId = :meng.Id];
+    for (Contract c : mengContracts) {
+        if (c.Status == 'Payment Failed') {
+            c.Status = 'Active';
+        }
+    }
+    update mengContracts;
+
+    meng.Customer_Status__c = mengContracts.isEmpty() ? 'Prospect' : 'Active';
+    update meng;
+}
