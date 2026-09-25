@@ -35,9 +35,9 @@ public with sharing class SendCheckoutLinkAction {
       : ' ' + c.Subscription_Plan__c;
     String body =
       LineMessagingService.addressAs(c.Account.FirstName, c.Account.LastName) +
-      'ขอบคุณที่เลือก NORITZ ค่ะ กรุณาชำระเงินแพ็กเกจ' +
+      'Thank you for choosing NORITZ. Please complete payment for your' +
       plan +
-      ' ผ่านลิงก์ด้านล่างเพื่อเริ่มใช้บริการค่ะ\n' +
+      ' package using the link below to start your service.\n' +
       url;
 
     LINE_Message__c saved = LineMessagingService.sendAndSave(

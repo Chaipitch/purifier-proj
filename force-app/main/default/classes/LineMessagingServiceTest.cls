@@ -9,10 +9,10 @@ private class LineMessagingServiceTest {
   @IsTest
   static void addressesCustomerByFirstNameThenLastName() {
     Assert.areEqual(
-      'คุณ Somchai ',
+      'Hi Somchai,\n',
       LineMessagingService.addressAs('Somchai', 'Sukhumvit')
     );
-    Assert.areEqual('คุณ Meng ', LineMessagingService.addressAs(null, 'Meng'));
+    Assert.areEqual('Hi Meng,\n', LineMessagingService.addressAs(null, 'Meng'));
     Assert.areEqual(
       '',
       LineMessagingService.addressAs(null, 'LINE friend ae43')

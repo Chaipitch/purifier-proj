@@ -43,7 +43,7 @@ public with sharing class SendPaymentRetryAction {
             c.Account.FirstName,
             c.Account.LastName
           ) +
-          'ชำระค่าบริการรายเดือนไม่สำเร็จค่ะ กรุณาอัปเดตวิธีการชำระเงินผ่านลิงก์นี้ค่ะ\n' +
+          'Payment failed for your monthly subscription. Please update your payment method using this link:\n' +
           RETRY_BASE_URL +
           reference +
           '/update-payment';

@@ -57,7 +57,7 @@ Switch to the Contract tab: Path **Pending Payment → Active → Payment Failed
 
 1. On the Contract tab, click **Send Stripe Checkout Link**.
 2. Green toast: "Checkout link sent — The customer has it on LINE."
-3. The phone receives the Thai message with `https://checkout.stripe.com/demo/sub_demo_12345`.
+3. The phone receives the English message with `https://checkout.stripe.com/demo/sub_demo_12345`.
 4. Switch to Somchai's tab: the chat already shows the green bubble with an **Open checkout** button.
 
 **Optional live chat moment:** type a reply on the phone → it appears in the widget within ~2 s. Type an answer in the widget and press Enter → it arrives on the phone.
@@ -67,7 +67,7 @@ Switch to the Contract tab: Path **Pending Payment → Active → Payment Failed
 1. On the Contract tab, click **Simulate Payment Failure**.
 2. Orange toast: "Payment failure simulated — Card Expired (ERR-02). Recovery is running."
 3. Within ~2 s, no refresh: contract Status flips **🟢Active → 🔴Payment Failed**.
-4. The phone receives the Thai retry message with the `.../demo/sub_demo_12345/update-payment` link.
+4. The phone receives the English retry message with the `.../demo/sub_demo_12345/update-payment` link.
 5. Switch to Somchai's tab: Status **Payment Suspended** in the highlights and the Path, and the chat shows the retry message with an **Update payment method** button.
 6. Optional: open Setup → Flows → **Payment Failure Recovery** to show the automation.
 
@@ -129,13 +129,13 @@ Click **Reset Demo** on the Contract tab. The page reloads after the green toast
 ### Scenario 1 — Quick Signup
 
 - [x] "Send Stripe Checkout Link" on the Contract (first action on `Contract Layout`): headless LWC `noritzSendCheckoutLink` → `SendCheckoutLinkAction.send` → push + save as Checkout Link → toast.
-- [x] Thai message with the plan name and mock link `https://checkout.stripe.com/demo/<Stripe_Sub_ID__c>`.
+- [x] English message ("Hi <first name>," then "Thank you for choosing NORITZ…") with the plan name and mock link `https://checkout.stripe.com/demo/<Stripe_Sub_ID__c>`.
 
 ### Scenario 2 — Payment Failure & Auto Recovery
 
 - [x] Contract status values: Pending Payment (Draft) → Active (Activated) → Payment Failed (Activated).
 - [x] Record-triggered Flow `Payment_Failure_Recovery` on `Payment_History__c` (after insert, `Status__c = Failed`): Contract → Payment Failed, Account → Payment Suspended, publish refresh, call `SendPaymentRetryAction`.
-- [x] `SendPaymentRetryAction` queues a job that pushes the Thai retry message (`.../demo/<sub>/update-payment`) and saves it as Payment Retry.
+- [x] `SendPaymentRetryAction` queues a job that pushes the English retry message ("Hi <first name>," then the spec's "Payment failed for your monthly subscription…") (`.../demo/<sub>/update-payment`) and saves it as Payment Retry.
 - [x] "Simulate Payment Failure" on the Contract: headless LWC `noritzSimulatePaymentFailure` → `SimulatePaymentFailureAction.simulate` inserts a failed payment (plan price, `Card Expired (ERR-02)`), then refreshes the contract page.
 
 ### Reset
@@ -207,6 +207,7 @@ Click **Reset Demo** on the Contract tab. The page reloads after the green toast
 | 2026-09-23 | Scenario 1 button is a headless LWC quick action, not a Screen Flow.                                              | A screenless Flow leaves a "Your flow finished" pop-up on stage; the LWC is one click with a toast.           |
 | 2026-09-23 | Scenario 2 automation is a record-triggered Flow, as in the spec; the LINE push runs in a queued job.             | The presenter can show the Flow; LINE can't be called inside the save.                                        |
 | 2026-09-23 | Messages to the customer are in Thai.                                                                             | Matches the audience and the rest of the chat. The retry text is the spec's English sentence translated.      |
+| 2026-09-25 | Automated checkout and retry messages switched to English; seeded chat history stays Thai.                        | User request. Retry text follows the spec wording.                                                            |
 | 2026-09-23 | Seed script renamed to `reset_demo.apex` and extended to contract, account and payments.                          | Matches CLAUDE.md's name; one command resets everything.                                                      |
 
 ---

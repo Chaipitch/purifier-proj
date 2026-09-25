@@ -2,14 +2,14 @@ public with sharing class LineMessagingService {
   // Name given to accounts created from LINE when the display name lookup fails.
   public static final String PLACEHOLDER_PREFIX = 'LINE friend ';
 
-  // Thai polite address ("คุณ" + first name, else last name) to open a message with.
+  // Greeting line ("Hi" + first name, else last name) to open a message with.
   // Empty for placeholder or missing names, so the message still reads naturally.
   public static String addressAs(String firstName, String lastName) {
     String name = String.isNotBlank(firstName) ? firstName : lastName;
     if (String.isBlank(name) || name.startsWith(PLACEHOLDER_PREFIX)) {
       return '';
     }
-    return 'คุณ ' + name + ' ';
+    return 'Hi ' + name + ',\n';
   }
 
   public class PushResult {
