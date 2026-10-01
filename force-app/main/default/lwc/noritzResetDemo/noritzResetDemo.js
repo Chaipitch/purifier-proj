@@ -17,7 +17,7 @@ export default class NoritzResetDemo extends LightningElement {
       await reset();
       this.toast(
         "Demo reset",
-        "Somchai and the LINE customers are back to the start. Reloading the page.",
+        "LINE customers are back to the start. Reloading the page.",
         "success"
       );
       // Standard related lists (payments) aren't pushed live, so reload everything.

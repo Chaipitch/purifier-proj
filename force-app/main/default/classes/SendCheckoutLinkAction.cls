@@ -16,6 +16,7 @@ public with sharing class SendCheckoutLinkAction {
     Contract c = [
       SELECT
         AccountId,
+        Status,
         Account.FirstName,
         Account.LastName,
         Stripe_Sub_ID__c,
@@ -48,6 +49,8 @@ public with sharing class SendCheckoutLinkAction {
     if (saved.Delivery_Status__c == 'Sent') {
       result.status = 'Sent';
       result.message = 'The customer has it on LINE.';
+
+      // update new Contract(Id = contractId, Status = 'Pending Payment');
     } else if (saved.Delivery_Status__c == 'Failed') {
       result.status = 'Failed';
       result.message =
