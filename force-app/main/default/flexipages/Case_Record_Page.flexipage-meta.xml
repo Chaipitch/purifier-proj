@@ -61,6 +61,12 @@
                 <identifier>c_noritzLineChat</identifier>
             </componentInstance>
         </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>noritzCustomerHistory</componentName>
+                <identifier>c_noritzCustomerHistory</identifier>
+            </componentInstance>
+        </itemInstances>
         <name>rightsidebar</name>
         <type>Region</type>
     </flexiPageRegions>

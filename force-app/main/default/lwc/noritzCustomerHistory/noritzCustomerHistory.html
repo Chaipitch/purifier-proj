@@ -1,0 +1,91 @@
+<template>
+  <lightning-card title="Customer History" icon-name="standard:timeline">
+    <div class="history">
+      <template lwc:if={isLoading}>
+        <lightning-spinner
+          alternative-text="Loading history"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template lwc:if={loadError}>
+        <p class="slds-text-color_error">{loadError}</p>
+      </template>
+
+      <section>
+        <h3 class="history__heading">Products</h3>
+        <template lwc:if={hasProducts}>
+          <ul class="history__list">
+            <template for:each={products} for:item="a">
+              <li key={a.id} class="item">
+                <div class="item__main">
+                  <a href={a.url}>{a.name}</a>
+                  <span class="item__sub">
+                    <template lwc:if={a.product}>{a.product} · </template>
+                    <template lwc:if={a.serial}>{a.serial}</template>
+                  </span>
+                </div>
+                <div class="item__side">
+                  <span>{a.filterStatus}</span>
+                  <span class="item__sub">Filter {a.nextFilter}</span>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </template>
+        <template lwc:else>
+          <p class="history__empty">No products yet.</p>
+        </template>
+      </section>
+
+      <section>
+        <h3 class="history__heading">Contracts</h3>
+        <template lwc:if={hasContracts}>
+          <ul class="history__list">
+            <template for:each={contracts} for:item="c">
+              <li key={c.id} class="item">
+                <div class="item__main">
+                  <a href={c.url}>{c.number}</a>
+                  <span class="item__sub">{c.plan}</span>
+                </div>
+                <div class="item__side">
+                  <span class={c.badgeClass}>{c.status}</span>
+                  <span class="item__sub">Next billing {c.nextBilling}</span>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </template>
+        <template lwc:else>
+          <p class="history__empty">No contracts yet.</p>
+        </template>
+      </section>
+
+      <section>
+        <h3 class="history__heading">Payments</h3>
+        <template lwc:if={hasPayments}>
+          <ul class="history__list">
+            <template for:each={payments} for:item="p">
+              <li key={p.id} class={p.rowClass}>
+                <div class="item__main">
+                  <span>{p.amount} · {p.status}</span>
+                  <template lwc:if={p.reason}>
+                    <span class="payment__reason">{p.reason}</span>
+                  </template>
+                </div>
+                <div class="item__side">
+                  <span class="item__sub">{p.when}</span>
+                  <template lwc:if={p.contract}>
+                    <span class="item__sub">{p.contract}</span>
+                  </template>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </template>
+        <template lwc:else>
+          <p class="history__empty">No payments yet.</p>
+        </template>
+      </section>
+    </div>
+  </lightning-card>
+</template>

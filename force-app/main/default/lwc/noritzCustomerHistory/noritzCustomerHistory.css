@@ -1,0 +1,81 @@
+.history {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--slds-g-spacing-4, 1rem);
+  padding: 0 var(--slds-g-spacing-4, 1rem);
+}
+
+.history__heading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--slds-g-color-neutral-base-50, #747474);
+  margin-bottom: var(--slds-g-spacing-1, 0.25rem);
+}
+
+.history__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.history__empty {
+  color: var(--slds-g-color-neutral-base-50, #747474);
+}
+
+.item,
+.payment {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--slds-g-spacing-3, 0.75rem);
+  padding: var(--slds-g-spacing-2, 0.5rem) 0;
+  border-bottom: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
+}
+
+.item__main,
+.item__side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.item__side {
+  align-items: flex-end;
+  text-align: right;
+  flex: none;
+}
+
+.item__sub {
+  font-size: 0.75rem;
+  color: var(--slds-g-color-neutral-base-50, #747474);
+}
+
+.badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0 0.5rem;
+  border-radius: 1rem;
+  background: var(--slds-g-color-neutral-base-90, #e5e5e5);
+  color: var(--slds-g-color-neutral-base-10, #181818);
+}
+
+/* Accent colours: the one place hand-set colours are allowed. */
+.badge_good {
+  background: #2e844a;
+  color: #fff;
+}
+
+.badge_bad {
+  background: #ba0517;
+  color: #fff;
+}
+
+.payment_failed {
+  color: #ba0517;
+  font-weight: 700;
+}
+
+.payment__reason {
+  font-size: 0.75rem;
+}
