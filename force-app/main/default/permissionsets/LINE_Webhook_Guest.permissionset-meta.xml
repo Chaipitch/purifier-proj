@@ -17,6 +17,11 @@
     </externalCredentialPrincipalAccesses>
     <fieldPermissions>
         <editable>true</editable>
+        <field>LINE_Message__c.Lead__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>LINE_Message__c.Account__c</field>
         <readable>true</readable>
     </fieldPermissions>

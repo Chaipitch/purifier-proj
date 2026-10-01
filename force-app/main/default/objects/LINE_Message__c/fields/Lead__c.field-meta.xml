@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Lead__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description
+  >The lead this conversation belongs to before conversion. Moved to Account__c when the lead converts.</description>
+    <label>Lead</label>
+    <referenceTo>Lead</referenceTo>
+    <relationshipLabel>LINE Messages</relationshipLabel>
+    <relationshipName>LINE_Messages</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

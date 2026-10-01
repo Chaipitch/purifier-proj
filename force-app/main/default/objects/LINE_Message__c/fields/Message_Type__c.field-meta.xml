@@ -24,6 +24,11 @@
                 <default>false</default>
                 <label>Payment Retry</label>
             </value>
+            <value>
+                <fullName>Filter Reminder</fullName>
+                <default>false</default>
+                <label>Filter Reminder</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>
