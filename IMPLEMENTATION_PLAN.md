@@ -1,7 +1,9 @@
 # NORITZ Demo — Implementation Tracker
 
 Target org: `noritz` (Developer Edition, `orgfarm-28f7eccd9f-dev-ed`)
-Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.png) · Last updated: 2026-09-23
+Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.png) · Last updated: 2026-10-01
+
+**Round 2 (2026-10-01):** LINE leads, conversion on first payment, chat templates, filter reminders, customer history, chat on Lead/Case. See [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md), [docs/CHANGES.md](docs/CHANGES.md), [docs/HANDOFF.md](docs/HANDOFF.md) and [docs/TESTING.md](docs/TESTING.md). Where this file and docs/ disagree, docs/ is newer.
 
 **Legend:** `[x]` done · `[ ]` to do · ⏸ deferred
 
@@ -19,7 +21,12 @@ Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.p
 | Scenario 1 — Quick Signup                                    | ✅ Done    | One-click button on the Contract                                    |
 | Scenario 2 — Payment Failure & Auto Recovery                 | ✅ Done    | Record-triggered Flow + one-click button                            |
 | Reset (button + script)                                      | ✅ Done    | **Reset Demo** on the Contract page; `scripts/apex/reset_demo.apex` |
-| Apex tests                                                   | ✅ 26 pass | Coverage 95–100% on every class                                     |
+| Apex tests                                                   | ✅ 54 pass | Every new class covered 90%+                                        |
+| Round 2: first LINE chat → Lead                              | ✅ Done    | Account wins if the LINE id is already on one                       |
+| Round 2: Lead → Person Account on first payment              | ✅ Done    | Simulate Payment Success on the Lead                                |
+| Round 2: chat on Lead / Account / Case + templates           | ✅ Done    | Templates in custom metadata `LINE_Chat_Template__mdt`              |
+| Round 2: filter reminder (invocable, daily flow, button)     | ✅ Done    | Daily flow not yet seen live                                        |
+| Round 2: Customer History card                               | ✅ Done    | Failed payments bold red, live refresh                              |
 | Stripe webhook endpoint (Task 10)                            | ⏸ Deferred | Second way to trigger Scenario 2, from Postman                      |
 | Header badge, payment timeline, asset card LWCs              | ⏸ Deferred | User chose the chat widget only; standard components cover the rest |
 | Console app "NORITZ Subscription Console" (Task 3)           | ⏸ Deferred | Demo runs in the existing **Service Console** app                   |
