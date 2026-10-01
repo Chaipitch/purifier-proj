@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Send_Filter_Reminder_on_LINE</name>
+        <label>Send Filter Reminder on LINE</label>
+        <locationX>50</locationX>
+        <locationY>360</locationY>
+        <actionName>SendFilterReminderAction</actionName>
+        <actionType>apex</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>assetIds</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <storeOutputAutomatically>false</storeOutputAutomatically>
+    </actionCalls>
+    <apiVersion>67.0</apiVersion>
+    <decisions>
+        <name>Due_in_7_Days</name>
+        <label>Due in 7 Days?</label>
+        <locationX>182</locationX>
+        <locationY>252</locationY>
+        <defaultConnectorLabel>Not yet</defaultConnectorLabel>
+        <rules>
+            <name>Due</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>NeedsReminder</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Send_Filter_Reminder_on_LINE</targetReference>
+            </connector>
+            <label>Due</label>
+        </rules>
+    </decisions>
+    <description
+  >Every morning: reminds customers on LINE when their purifier filter is due in 7 days. Skips assets reminded in the last 30 days.</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>NeedsReminder</name>
+        <dataType>Boolean</dataType>
+        <expression
+    >{!$Record.Next_Filter_Replacement__c} = TODAY() + 7 &amp;&amp; NOT(ISBLANK({!$Record.AccountId})) &amp;&amp; (ISBLANK({!$Record.Last_Filter_Reminder__c}) || {!$Record.Last_Filter_Reminder__c} &lt; TODAY() - 30)</expression>
+    </formulas>
+    <interviewLabel
+  >Filter Reminder Daily {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Filter Reminder Daily</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Due_in_7_Days</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Next_Filter_Replacement__c</field>
+            <operator>IsNull</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </filters>
+        <object>Asset</object>
+        <schedule>
+            <frequency>Daily</frequency>
+            <startDate>2026-10-02</startDate>
+            <startTime>02:00:00.000Z</startTime>
+        </schedule>
+        <triggerType>Scheduled</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

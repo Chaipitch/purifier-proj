@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionSubtype>Action</actionSubtype>
+    <description
+  >One click: reminds the customer on LINE that the purifier filter is due for replacement.</description>
+    <label>Send Filter Reminder</label>
+    <lightningWebComponent>noritzSendFilterReminder</lightningWebComponent>
+    <optionsCreateFeedItem>false</optionsCreateFeedItem>
+    <type>LightningWebComponent</type>
+</QuickAction>
