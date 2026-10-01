@@ -49,10 +49,13 @@ public with sharing class DemoResetAction {
     somchai.Customer_Status__c = 'Active';
     update somchai;
 
+    // Seeded history: don't let the payment success flow message the customer about it.
+    SendPaymentSuccessAction.suppress = true;
     insert new List<Payment_History__c>{
       payment(contract.Id, somchai.Id),
       payment(contract.Id, somchai.Id)
     };
+    SendPaymentSuccessAction.suppress = false;
 
     Datetime now = System.now();
     insert new List<LINE_Message__c>{

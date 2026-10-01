@@ -1,4 +1,7 @@
 public with sharing class SendPaymentSuccessAction {
+  // Set by Reset Demo while it seeds past payments, so resetting doesn't message the customer.
+  public static Boolean suppress = false;
+
   // Called from the Payment Success flow while the successful payment is being saved.
   // LINE can't be called inside that save, so the push runs in a queueable afterwards, as the
   // same user (who has access to the LINE named credential).
@@ -8,6 +11,9 @@ public with sharing class SendPaymentSuccessAction {
     category='LINE'
   )
   public static void send(List<Id> contractIds) {
+    if (suppress) {
+      return;
+    }
     System.enqueueJob(new SuccessMessageJob(new Set<Id>(contractIds)));
   }
 
@@ -19,8 +25,6 @@ public with sharing class SendPaymentSuccessAction {
     }
 
     public void execute(QueueableContext context) {
-      System.debug('--- QUEUEABLE STARTED ---');
-      System.debug('Contract IDs received: ' + contractIds);
       List<LINE_Message__c> messages = new List<LINE_Message__c>();
       for (Contract c : [
         SELECT
@@ -48,7 +52,6 @@ public with sharing class SendPaymentSuccessAction {
           )
         );
       }
-      System.debug('messages send success:' + messages);
       LineMessagingService.pushAndInsert(messages);
     }
   }

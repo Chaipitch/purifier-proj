@@ -1,10 +1,11 @@
-import { LightningElement, api } from "lwc";
+import { LightningElement, api, wire } from "lwc";
 import { subscribe, unsubscribe, onError } from "lightning/empApi";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { notifyRecordUpdateAvailable } from "lightning/uiRecordApi";
 import TIME_ZONE from "@salesforce/i18n/timeZone";
 import getChat from "@salesforce/apex/NoritzLineChatController.getChat";
 import sendMessage from "@salesforce/apex/NoritzLineChatController.sendMessage";
+import getTemplates from "@salesforce/apex/NoritzLineChatController.getTemplates";
 
 const CHANNEL = "/event/LINE_Chat_Refresh__e";
 const FALLBACK_POLL_SECONDS = 3;
@@ -32,6 +33,10 @@ export default class NoritzLineChat extends LightningElement {
 
   customerName;
   lineUserId;
+  // The Account or Lead whose conversation this is (a Case page shows its Account's chat).
+  chatOwnerId;
+  noCustomer = false;
+  templates = [];
   rawMessages = [];
   draft = "";
   isLoading = true;
@@ -41,6 +46,15 @@ export default class NoritzLineChat extends LightningElement {
   subscription;
   pollTimer;
   scrollPending = false;
+
+  @wire(getTemplates, { recordId: "$recordId" })
+  wiredTemplates({ data }) {
+    this.templates = (data || []).map((t, i) => ({
+      value: String(i),
+      label: t.label,
+      body: t.body
+    }));
+  }
 
   connectedCallback() {
     this.loadChat();
@@ -68,10 +82,12 @@ export default class NoritzLineChat extends LightningElement {
 
   async loadChat() {
     try {
-      const data = await getChat({ accountId: this.recordId });
+      const data = await getChat({ recordId: this.recordId });
       const grew = data.messages.length !== this.rawMessages.length;
       this.customerName = data.customerName;
       this.lineUserId = data.lineUserId;
+      this.chatOwnerId = data.chatOwnerId;
+      this.noCustomer = data.noCustomer;
       this.rawMessages = data.messages;
       this.loadError = undefined;
       if (grew) {
@@ -87,10 +103,14 @@ export default class NoritzLineChat extends LightningElement {
   subscribeToRefresh() {
     onError(() => this.startPolling(FALLBACK_POLL_SECONDS));
     subscribe(CHANNEL, -1, (event) => {
-      if (event?.data?.payload?.Account_Id__c === this.recordId) {
+      const changedId = event?.data?.payload?.Account_Id__c;
+      if (
+        changedId &&
+        (changedId === this.chatOwnerId || changedId === this.recordId)
+      ) {
         this.loadChat();
         // Server-side changes (e.g. the payment failure flow) don't reach the standard
-        // highlights panel or Path on their own; this makes the page re-read the Account.
+        // highlights panel or Path on their own; this makes the page re-read the record.
         notifyRecordUpdateAvailable([{ recordId: this.recordId }]);
       }
     })
@@ -120,7 +140,13 @@ export default class NoritzLineChat extends LightningElement {
   }
 
   get notLinked() {
-    return !this.isLoading && !this.loadError && !this.lineUserId;
+    return (
+      !this.isLoading && !this.loadError && !this.noCustomer && !this.lineUserId
+    );
+  }
+
+  get hasTemplates() {
+    return this.templates.length > 0 && !this.noCustomer;
   }
 
   get hasMessages() {
@@ -158,6 +184,17 @@ export default class NoritzLineChat extends LightningElement {
     });
   }
 
+  // Puts the chosen template in the message box for the agent to edit before sending.
+  handleTemplateSelect(event) {
+    const template = this.templates.find((t) => t.value === event.detail.value);
+    if (!template) {
+      return;
+    }
+    this.draft = template.body;
+    this.refs.input.value = template.body;
+    this.refs.input.focus();
+  }
+
   handleDraftChange(event) {
     this.draft = event.target.value;
   }
@@ -177,7 +214,7 @@ export default class NoritzLineChat extends LightningElement {
     }
     this.isSending = true;
     try {
-      const saved = await sendMessage({ accountId: this.recordId, body });
+      const saved = await sendMessage({ recordId: this.recordId, body });
       this.draft = "";
       this.refs.input.value = "";
       this.rawMessages = [

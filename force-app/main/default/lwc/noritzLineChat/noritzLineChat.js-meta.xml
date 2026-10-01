@@ -4,7 +4,7 @@
     <isExposed>true</isExposed>
     <masterLabel>NORITZ LINE Chat</masterLabel>
     <description
-  >Live LINE chat with the customer, on the Account record page.</description>
+  >Live LINE chat with the customer, on Lead, Account and Case record pages.</description>
     <targets>
         <target>lightning__RecordPage</target>
     </targets>
@@ -12,6 +12,8 @@
         <targetConfig targets="lightning__RecordPage">
             <objects>
                 <object>Account</object>
+                <object>Lead</object>
+                <object>Case</object>
             </objects>
             <property
         name="pollingInterval"

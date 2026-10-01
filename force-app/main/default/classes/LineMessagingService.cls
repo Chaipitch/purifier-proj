@@ -1,5 +1,5 @@
 public with sharing class LineMessagingService {
-  // Name given to accounts created from LINE when the display name lookup fails.
+  // Name given to leads created from LINE when the display name lookup fails.
   public static final String PLACEHOLDER_PREFIX = 'LINE friend ';
 
   // Greeting line ("Hi" + first name, else last name) to open a message with.
@@ -17,19 +17,86 @@ public with sharing class LineMessagingService {
     public String error;
   }
 
+  // Who a chat on a Lead, Account or Case page talks to. A Case talks to its Account's LINE
+  // user; a converted Lead talks to the Account it became.
+  public class Recipient {
+    public Id accountId;
+    public Id leadId;
+    public Id caseId;
+    public String lineUserId;
+    public String name;
+    public String firstName;
+    public String lastName;
+  }
+
+  public static Recipient recipientFor(Id recordId) {
+    Recipient r = new Recipient();
+    SObjectType type = recordId.getSObjectType();
+    if (type == Lead.SObjectType) {
+      Lead l = [
+        SELECT
+          Name,
+          FirstName,
+          LastName,
+          LINE_User_ID__c,
+          IsConverted,
+          ConvertedAccountId
+        FROM Lead
+        WHERE Id = :recordId
+      ];
+      if (l.IsConverted && l.ConvertedAccountId != null) {
+        return recipientFor(l.ConvertedAccountId);
+      }
+      r.leadId = l.Id;
+      r.lineUserId = l.LINE_User_ID__c;
+      r.name = l.Name;
+      r.firstName = l.FirstName;
+      r.lastName = l.LastName;
+    } else if (type == Case.SObjectType) {
+      Case c = [SELECT AccountId FROM Case WHERE Id = :recordId];
+      if (c.AccountId != null) {
+        r = recipientFor(c.AccountId);
+      }
+      r.caseId = recordId;
+    } else {
+      Account a = [
+        SELECT Name, FirstName, LastName, LINE_User_ID__c
+        FROM Account
+        WHERE Id = :recordId
+      ];
+      r.accountId = a.Id;
+      r.lineUserId = a.LINE_User_ID__c;
+      r.name = a.Name;
+      r.firstName = a.FirstName;
+      r.lastName = a.LastName;
+    }
+    return r;
+  }
+
+  // recordId: the Lead, Account or Case the message is sent from.
   public static LINE_Message__c sendAndSave(
-    Id accountId,
+    Id recordId,
     String text,
     String messageType
   ) {
-    Account acc = [SELECT LINE_User_ID__c FROM Account WHERE Id = :accountId];
+    LINE_Message__c msg = outbound(recipientFor(recordId), text, messageType);
+    pushAndInsert(new List<LINE_Message__c>{ msg });
+    return msg;
+  }
+
+  public static LINE_Message__c outbound(
+    Recipient to,
+    String text,
+    String messageType
+  ) {
     LINE_Message__c msg = outbound(
-      accountId,
-      acc.LINE_User_ID__c,
+      to.accountId,
+      to.lineUserId,
       text,
       messageType
     );
-    pushAndInsert(new List<LINE_Message__c>{ msg });
+    msg.Lead__c = to.leadId;
+    msg.Case__c = to.caseId;
     return msg;
   }
 

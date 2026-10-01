@@ -123,7 +123,7 @@ private class LineWebhookHandlerTest {
   }
 
   @IsTest
-  static void newFriendBecomesProspectNamedAfterLineProfile() {
+  static void newFriendBecomesLeadNamedAfterLineProfile() {
     Test.setMock(HttpCalloutMock.class, new ProfileMock(200));
 
     // startTest: the profile lookup is a callout, which can't follow the @TestSetup DML otherwise.
@@ -131,38 +131,78 @@ private class LineWebhookHandlerTest {
     postSigned(events(followEvent('U_new', '01J0FOLLOW')));
     Test.stopTest();
 
-    Account a = [
-      SELECT LastName, Customer_Status__c, IsPersonAccount
-      FROM Account
+    Lead l = [
+      SELECT LastName, Company, LeadSource, IsConverted
+      FROM Lead
       WHERE LINE_User_ID__c = 'U_new'
     ];
-    Assert.areEqual('สมหญิง ใจดี', a.LastName);
-    Assert.areEqual('Prospect', a.Customer_Status__c);
-    Assert.isTrue(a.IsPersonAccount);
+    Assert.areEqual('สมหญิง ใจดี', l.LastName);
+    Assert.isNull(l.Company, 'Blank so it converts to a Person Account');
+    Assert.areEqual('LINE', l.LeadSource);
+    Assert.areEqual(
+      0,
+      [SELECT COUNT() FROM Account WHERE LINE_User_ID__c = 'U_new']
+    );
     LINE_Message__c m = [
-      SELECT Account__c, Message_Body__c, LINE_Message_ID__c
+      SELECT Lead__c, Account__c, Message_Body__c, LINE_Message_ID__c
       FROM LINE_Message__c
     ];
-    Assert.areEqual(a.Id, m.Account__c);
+    Assert.areEqual(l.Id, m.Lead__c);
+    Assert.isNull(m.Account__c);
     Assert.areEqual('[Added the OA as a friend]', m.Message_Body__c);
     Assert.areEqual('follow:01J0FOLLOW', m.LINE_Message_ID__c);
   }
 
   @IsTest
-  static void unknownSenderGetsAccountAndEarlierMessagesAreAttached() {
+  static void existingLeadGetsTheMessageAndNoNewLead() {
+    Lead l = new Lead(LastName = 'Known Lead', LINE_User_ID__c = 'U_lead');
+    insert l;
+
+    postSigned(events(textEvent('U_lead', 'm9', 'any plans?')));
+
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM Lead WHERE LINE_User_ID__c = 'U_lead']
+    );
+    Assert.areEqual(
+      l.Id,
+      [SELECT Lead__c FROM LINE_Message__c WHERE LINE_Message_ID__c = 'm9']
+      .Lead__c
+    );
+  }
+
+  @IsTest
+  static void accountWinsOverLeadWithTheSameLineId() {
+    insert new Lead(LastName = 'Old Lead', LINE_User_ID__c = 'U_known');
+
+    postSigned(events(textEvent('U_known', 'm10', 'hi')));
+
+    LINE_Message__c m = [
+      SELECT Account__c, Lead__c
+      FROM LINE_Message__c
+      WHERE LINE_Message_ID__c = 'm10'
+    ];
+    Assert.isNotNull(m.Account__c);
+    Assert.isNull(m.Lead__c);
+  }
+
+  @IsTest
+  static void unknownSenderGetsLeadAndEarlierMessagesAreAttached() {
     Test.setMock(HttpCalloutMock.class, new ProfileMock(200));
     insert new LINE_Message__c(
       LINE_User_ID__c = 'U_new',
       Direction__c = 'Inbound',
-      Message_Body__c = 'sent before the account existed'
+      Message_Body__c = 'sent before the lead existed'
     );
 
+    Test.startTest();
     postSigned(events(textEvent('U_new', 'm2', 'hello')));
+    Test.stopTest();
 
-    Id accountId = [SELECT Id FROM Account WHERE LINE_User_ID__c = 'U_new'].Id;
+    Id leadId = [SELECT Id FROM Lead WHERE LINE_User_ID__c = 'U_new'].Id;
     Assert.areEqual(
       2,
-      [SELECT COUNT() FROM LINE_Message__c WHERE Account__c = :accountId]
+      [SELECT COUNT() FROM LINE_Message__c WHERE Lead__c = :leadId]
     );
   }
 
@@ -176,22 +216,14 @@ private class LineWebhookHandlerTest {
 
     Assert.areEqual(
       'LINE friend 1234',
-      [SELECT LastName FROM Account WHERE LINE_User_ID__c = 'U_nobody1234']
+      [SELECT LastName FROM Lead WHERE LINE_User_ID__c = 'U_nobody1234']
       .LastName
     );
   }
 
   @IsTest
   static void placeholderNameIsReplacedOnTheNextMessage() {
-    Id personType = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
-      .get('PersonAccount')
-      .getRecordTypeId();
-    insert new Account(
-      RecordTypeId = personType,
-      LastName = 'LINE friend _new',
-      LINE_User_ID__c = 'U_new',
-      Customer_Status__c = 'Prospect'
-    );
+    insert new Lead(LastName = 'LINE friend _new', LINE_User_ID__c = 'U_new');
     Test.setMock(HttpCalloutMock.class, new ProfileMock(200));
 
     Test.startTest();
@@ -200,11 +232,11 @@ private class LineWebhookHandlerTest {
 
     Assert.areEqual(
       'สมหญิง ใจดี',
-      [SELECT LastName FROM Account WHERE LINE_User_ID__c = 'U_new'].LastName
+      [SELECT LastName FROM Lead WHERE LINE_User_ID__c = 'U_new'].LastName
     );
     Assert.areEqual(
       1,
-      [SELECT COUNT() FROM Account WHERE LINE_User_ID__c = 'U_new']
+      [SELECT COUNT() FROM Lead WHERE LINE_User_ID__c = 'U_new']
     );
   }
 
@@ -222,7 +254,7 @@ private class LineWebhookHandlerTest {
 
     Assert.areEqual(
       1,
-      [SELECT COUNT() FROM Account WHERE LINE_User_ID__c = 'U_new']
+      [SELECT COUNT() FROM Lead WHERE LINE_User_ID__c = 'U_new']
     );
     Assert.areEqual(2, [SELECT COUNT() FROM LINE_Message__c]);
   }

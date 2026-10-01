@@ -86,6 +86,8 @@ private class SimulatePaymentFailureActionTest {
   @IsTest
   static void successfulPaymentDoesNotTriggerRecovery() {
     Contract c = [SELECT Id, AccountId FROM Contract LIMIT 1];
+    // The payment success flow sends a "payment received" message.
+    Test.setMock(HttpCalloutMock.class, new LineCalloutMock());
 
     Test.startTest();
     insert new Payment_History__c(
@@ -99,6 +101,13 @@ private class SimulatePaymentFailureActionTest {
       'Active',
       [SELECT Status FROM Contract WHERE Id = :c.Id].Status
     );
-    Assert.areEqual(0, [SELECT COUNT() FROM LINE_Message__c]);
+    Assert.areEqual(
+      0,
+      [
+        SELECT COUNT()
+        FROM LINE_Message__c
+        WHERE Message_Type__c = 'Payment Retry'
+      ]
+    );
   }
 }

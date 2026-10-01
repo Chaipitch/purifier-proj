@@ -105,6 +105,11 @@
   font-weight: 700;
 }
 
+.chat__templates {
+  padding: var(--slds-g-spacing-2, 0.5rem) var(--slds-g-spacing-4, 1rem) 0;
+  border-top: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
+}
+
 .chat__composer {
   display: flex;
   gap: var(--slds-g-spacing-2, 0.5rem);
@@ -117,4 +122,8 @@
   flex: 1;
   resize: none;
   min-height: 2.5rem;
+}
+
+.chat__templates + .chat__composer {
+  border-top: none;
 }

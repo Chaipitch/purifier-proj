@@ -131,6 +131,16 @@
         <itemInstances>
             <componentInstance>
                 <componentInstanceProperties>
+                    <name>pollingInterval</name>
+                    <value>0</value>
+                </componentInstanceProperties>
+                <componentName>noritzLineChat</componentName>
+                <identifier>c_noritzLineChat</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentInstanceProperties>
                     <name>parentFieldApiName</name>
                     <value>Lead.Id</value>
                 </componentInstanceProperties>

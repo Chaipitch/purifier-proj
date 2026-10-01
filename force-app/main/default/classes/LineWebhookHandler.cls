@@ -6,6 +6,8 @@
 global without sharing class LineWebhookHandler {
   @TestVisible
   private static final String FOLLOW_TEXT = '[Added the OA as a friend]';
+  @TestVisible
+  private static final String LEAD_SOURCE = 'LINE';
 
   @HttpPost
   global static void receive() {
@@ -84,6 +86,7 @@ global without sharing class LineWebhookHandler {
     ]) {
       alreadySaved.add(m.LINE_Message_ID__c);
     }
+    // A LINE user is an existing customer (Account) or, before their first payment, a Lead.
     Map<String, Account> accountByLineId = new Map<String, Account>();
     for (Account a : [
       SELECT Id, LastName, LINE_User_ID__c
@@ -96,18 +99,34 @@ global without sharing class LineWebhookHandler {
         accountByLineId.put(a.LINE_User_ID__c, a);
       }
     }
+    Map<String, Lead> leadByLineId = new Map<String, Lead>();
+    for (Lead l : [
+      SELECT Id, LastName, LINE_User_ID__c
+      FROM Lead
+      WHERE LINE_User_ID__c IN :userIds AND IsConverted = FALSE
+      WITH SYSTEM_MODE
+      ORDER BY CreatedDate
+    ]) {
+      if (!leadByLineId.containsKey(l.LINE_User_ID__c)) {
+        leadByLineId.put(l.LINE_User_ID__c, l);
+      }
+    }
 
     // Profile lookups are callouts, so all of them run before the first DML below.
     Map<String, String> displayNames = new Map<String, String>();
     for (String userId : userIds) {
-      Account existing = accountByLineId.get(userId);
-      if (existing == null || isPlaceholder(existing.LastName)) {
+      Account account = accountByLineId.get(userId);
+      Lead lead = leadByLineId.get(userId);
+      Boolean needsName = account != null
+        ? isPlaceholder(account.LastName)
+        : lead == null || isPlaceholder(lead.LastName);
+      if (needsName) {
         displayNames.put(userId, LineMessagingService.fetchDisplayName(userId));
       }
     }
 
-    renamePlaceholders(accountByLineId, displayNames);
-    createProspects(userIds, accountByLineId, displayNames);
+    renamePlaceholders(accountByLineId, leadByLineId, displayNames);
+    createLeads(userIds, accountByLineId, leadByLineId, displayNames);
 
     List<LINE_Message__c> toInsert = new List<LINE_Message__c>();
     for (Map<String, Object> ev : relevant) {
@@ -117,10 +136,12 @@ global without sharing class LineWebhookHandler {
       }
       String userId = userIdOf(ev);
       Account account = accountByLineId.get(userId);
+      Lead lead = account == null ? leadByLineId.get(userId) : null;
       Map<String, Object> message = (Map<String, Object>) ev.get('message');
       toInsert.add(
         new LINE_Message__c(
           Account__c = account?.Id,
+          Lead__c = lead?.Id,
           LINE_User_ID__c = userId,
           LINE_Message_ID__c = key,
           Direction__c = 'Inbound',
@@ -140,72 +161,83 @@ global without sharing class LineWebhookHandler {
       lastName.startsWith(LineMessagingService.PLACEHOLDER_PREFIX);
   }
 
-  // An earlier profile lookup failed: use this event's lookup to give the account its real name.
+  // An earlier profile lookup failed: use this event's lookup to give the record its real name.
   private static void renamePlaceholders(
     Map<String, Account> accountByLineId,
+    Map<String, Lead> leadByLineId,
     Map<String, String> displayNames
   ) {
-    List<Account> renamed = new List<Account>();
+    List<SObject> renamed = new List<SObject>();
     for (String userId : displayNames.keySet()) {
-      Account existing = accountByLineId.get(userId);
       String name = displayNames.get(userId);
-      if (existing != null && String.isNotBlank(name)) {
-        existing.LastName = name;
-        renamed.add(existing);
+      if (String.isBlank(name)) {
+        continue;
+      }
+      Account account = accountByLineId.get(userId);
+      Lead lead = leadByLineId.get(userId);
+      if (account != null) {
+        account.LastName = name;
+        renamed.add(account);
+      } else if (lead != null) {
+        lead.LastName = name;
+        renamed.add(lead);
       }
     }
     Database.update(renamed, false, AccessLevel.SYSTEM_MODE);
   }
 
-  // Every LINE user without an Account becomes a Prospect Person Account named after their
-  // LINE display name (or a placeholder if the lookup failed). Adds them to accountByLineId.
-  private static void createProspects(
+  // A LINE user with no Account and no open Lead becomes a Lead named after their LINE display
+  // name (or a placeholder if the lookup failed). Company stays blank so the Lead converts to a
+  // Person Account on the first payment. Adds them to leadByLineId.
+  private static void createLeads(
     Set<String> userIds,
     Map<String, Account> accountByLineId,
+    Map<String, Lead> leadByLineId,
     Map<String, String> displayNames
   ) {
-    Id personType = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
-      .get('PersonAccount')
-      .getRecordTypeId();
-    Map<String, Account> prospects = new Map<String, Account>();
+    Map<String, Lead> created = new Map<String, Lead>();
     for (String userId : userIds) {
-      if (accountByLineId.containsKey(userId)) {
+      if (
+        accountByLineId.containsKey(userId) || leadByLineId.containsKey(userId)
+      ) {
         continue;
       }
       String name = displayNames.get(userId);
-      prospects.put(
+      created.put(
         userId,
-        new Account(
-          RecordTypeId = personType,
+        new Lead(
           LastName = String.isBlank(name)
             ? LineMessagingService.PLACEHOLDER_PREFIX + userId.right(4)
             : name,
           LINE_User_ID__c = userId,
-          Customer_Status__c = 'Prospect'
+          LeadSource = LEAD_SOURCE
         )
       );
     }
-    if (prospects.isEmpty()) {
+    if (created.isEmpty()) {
       return;
     }
 
-    Database.insert(prospects.values(), false, AccessLevel.SYSTEM_MODE);
-    for (String userId : prospects.keySet()) {
-      Account created = prospects.get(userId);
-      if (created.Id != null) {
-        accountByLineId.put(userId, created);
+    Database.insert(created.values(), false, AccessLevel.SYSTEM_MODE);
+    for (String userId : created.keySet()) {
+      Lead lead = created.get(userId);
+      if (lead.Id != null) {
+        leadByLineId.put(userId, lead);
       }
     }
 
-    // Messages that arrived before the Account existed were saved without one.
+    // Messages that arrived before the Lead existed were saved without a customer.
     List<LINE_Message__c> earlier = [
       SELECT Id, LINE_User_ID__c
       FROM LINE_Message__c
-      WHERE LINE_User_ID__c IN :prospects.keySet() AND Account__c = NULL
+      WHERE
+        LINE_User_ID__c IN :created.keySet()
+        AND Account__c = NULL
+        AND Lead__c = NULL
       WITH SYSTEM_MODE
     ];
     for (LINE_Message__c m : earlier) {
-      m.Account__c = accountByLineId.get(m.LINE_User_ID__c)?.Id;
+      m.Lead__c = leadByLineId.get(m.LINE_User_ID__c)?.Id;
     }
     Database.update(earlier, false, AccessLevel.SYSTEM_MODE);
   }

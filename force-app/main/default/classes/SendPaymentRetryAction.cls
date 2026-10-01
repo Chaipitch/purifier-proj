@@ -23,8 +23,6 @@ public with sharing class SendPaymentRetryAction {
     }
 
     public void execute(QueueableContext context) {
-      System.debug('--- QUEUEABLE STARTED ---');
-      System.debug('Contract IDs received: ' + contractIds);
       List<LINE_Message__c> messages = new List<LINE_Message__c>();
       for (Contract c : [
         SELECT

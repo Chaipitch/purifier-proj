@@ -7,6 +7,16 @@
       </h2>
     </header>
 
+    <template lwc:if={noCustomer}>
+      <div
+        class="slds-notify slds-notify_alert slds-alert_warning chat__banner"
+        role="status"
+      >
+        This case isn't linked to a customer yet. Add an account to see the LINE
+        chat.
+      </div>
+    </template>
+
     <template lwc:if={notLinked}>
       <div
         class="slds-notify slds-notify_alert slds-alert_warning chat__banner"
@@ -61,6 +71,27 @@
         </div>
       </template>
     </div>
+
+    <template lwc:if={hasTemplates}>
+      <div class="chat__templates">
+        <lightning-button-menu
+          label="Templates"
+          icon-name="utility:quick_text"
+          alternative-text="Insert a template"
+          menu-alignment="bottom-left"
+          variant="border-filled"
+          onselect={handleTemplateSelect}
+        >
+          <template for:each={templates} for:item="t">
+            <lightning-menu-item
+              key={t.value}
+              value={t.value}
+              label={t.label}
+            ></lightning-menu-item>
+          </template>
+        </lightning-button-menu>
+      </div>
+    </template>
 
     <footer class="chat__composer">
       <textarea
