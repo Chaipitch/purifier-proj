@@ -193,4 +193,81 @@ private class DemoResetActionTest {
       );
     }
   }
+
+  @IsTest
+  static void convertedLeadComesBackAsAFreshLead() {
+    Lead l = new Lead(
+      FirstName = 'Somying',
+      LastName = 'Jaidee',
+      LINE_User_ID__c = 'U_conv',
+      Subscription_Plan__c = 'Standard (900 THB)'
+    );
+    insert l;
+    Test.setMock(HttpCalloutMock.class, new LineCalloutMock());
+    Id accountId = LeadConversionService.convertOnFirstPayment(l.Id);
+
+    Test.startTest();
+    DemoResetAction.reset();
+    Test.stopTest();
+
+    Account archived = [
+      SELECT LastName, LINE_User_ID__c, Converted_From_LINE_Lead__c
+      FROM Account
+      WHERE Id = :accountId
+    ];
+    Assert.areEqual('Archived - Jaidee', archived.LastName);
+    Assert.isNull(archived.LINE_User_ID__c);
+    Assert.isFalse(archived.Converted_From_LINE_Lead__c);
+
+    Lead fresh = [
+      SELECT FirstName, LastName, Subscription_Plan__c, IsConverted, Status
+      FROM Lead
+      WHERE LINE_User_ID__c = 'U_conv' AND IsConverted = FALSE
+    ];
+    Assert.areEqual('Somying', fresh.FirstName);
+    Assert.areEqual('Jaidee', fresh.LastName);
+    Assert.areEqual('Standard (900 THB)', fresh.Subscription_Plan__c);
+    Assert.isFalse(fresh.IsConverted);
+    Assert.areEqual(
+      1,
+      [
+        SELECT COUNT()
+        FROM LINE_Message__c
+        WHERE Lead__c = :fresh.Id AND Account__c = NULL
+      ]
+    );
+  }
+
+  @IsTest
+  static void openLineLeadChatIsTrimmed() {
+    Lead l = new Lead(
+      LastName = 'Chatty',
+      LINE_User_ID__c = 'U_chatty',
+      Status = 'Working - Contacted'
+    );
+    insert l;
+    insert new List<LINE_Message__c>{
+      new LINE_Message__c(
+        Lead__c = l.Id,
+        Direction__c = 'Inbound',
+        Message_Body__c = '[Added the OA as a friend]'
+      ),
+      new LINE_Message__c(
+        Lead__c = l.Id,
+        Direction__c = 'Outbound',
+        Message_Body__c = 'checkout'
+      )
+    };
+
+    DemoResetAction.reset();
+
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM LINE_Message__c WHERE Lead__c = :l.Id]
+    );
+    Assert.areEqual(
+      'Open - Not Contacted',
+      [SELECT Status FROM Lead WHERE Id = :l.Id].Status
+    );
+  }
 }

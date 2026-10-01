@@ -1,13 +1,102 @@
 // "Reset Demo" button on the Contract page: puts the demo customers back to their pre-demo state.
-// Safe to run any number of times. Touches Somchai Sukhumvit and every customer linked to LINE;
-// customers without a LINE User ID are left alone. scripts/apex/reset_demo.apex calls the same code.
+// Safe to run any number of times. Touches Somchai Sukhumvit, every customer and lead linked to
+// LINE, and customers converted from a LINE lead (they become a fresh lead again). Records without
+// a LINE User ID are left alone. scripts/apex/reset_demo.apex calls the same code.
 public with sharing class DemoResetAction {
   private static final String FOLLOW_TEXT = '[Added the OA as a friend]';
+  @TestVisible
+  private static final String ARCHIVED_PREFIX = 'Archived - ';
+  private static final String OPEN_STATUS = 'Open - Not Contacted';
 
   @AuraEnabled
   public static void reset() {
     Id somchaiId = resetSomchai();
+    restoreConvertedLeads();
     resetLineFriends(somchaiId);
+    resetLineLeads();
+  }
+
+  // A conversion can't be undone, and an account with an activated contract can't be deleted.
+  // So the converted customer is archived (renamed, LINE id cleared) and a new lead with the same
+  // LINE id, name and plan takes its place: the next run starts from a lead again.
+  private static void restoreConvertedLeads() {
+    List<Account> converted = [
+      SELECT Id, FirstName, LastName, LINE_User_ID__c
+      FROM Account
+      WHERE Converted_From_LINE_Lead__c = TRUE AND LINE_User_ID__c != NULL
+    ];
+    if (converted.isEmpty()) {
+      return;
+    }
+    Map<Id, Lead> originalByAccount = new Map<Id, Lead>();
+    for (Lead l : [
+      SELECT ConvertedAccountId, Subscription_Plan__c
+      FROM Lead
+      WHERE ConvertedAccountId IN :converted
+    ]) {
+      originalByAccount.put(l.ConvertedAccountId, l);
+    }
+
+    List<Lead> fresh = new List<Lead>();
+    for (Account a : converted) {
+      Lead original = originalByAccount.get(a.Id);
+      fresh.add(
+        new Lead(
+          FirstName = a.FirstName,
+          LastName = a.LastName,
+          LINE_User_ID__c = a.LINE_User_ID__c,
+          LeadSource = 'LINE',
+          Subscription_Plan__c = original?.Subscription_Plan__c
+        )
+      );
+      a.LastName = ARCHIVED_PREFIX + a.LastName;
+      a.LINE_User_ID__c = null;
+      a.Converted_From_LINE_Lead__c = false;
+    }
+    update converted;
+    insert fresh;
+
+    List<LINE_Message__c> follows = new List<LINE_Message__c>();
+    for (Lead l : fresh) {
+      follows.add(
+        new LINE_Message__c(
+          Lead__c = l.Id,
+          LINE_User_ID__c = l.LINE_User_ID__c,
+          Direction__c = 'Inbound',
+          Message_Type__c = 'Text',
+          Message_Body__c = FOLLOW_TEXT,
+          Sent_At__c = System.now()
+        )
+      );
+    }
+    insert follows;
+  }
+
+  // Open LINE leads: chat back to the "added as a friend" line, status back to the start.
+  private static void resetLineLeads() {
+    List<Lead> leads = [
+      SELECT Id
+      FROM Lead
+      WHERE LINE_User_ID__c != NULL AND IsConverted = FALSE
+    ];
+    if (leads.isEmpty()) {
+      return;
+    }
+    List<LINE_Message__c> chatter = new List<LINE_Message__c>();
+    for (LINE_Message__c m : [
+      SELECT Id, Direction__c, Message_Body__c
+      FROM LINE_Message__c
+      WHERE Lead__c IN :leads AND Account__c = NULL
+    ]) {
+      if (m.Direction__c != 'Inbound' || m.Message_Body__c != FOLLOW_TEXT) {
+        chatter.add(m);
+      }
+    }
+    delete chatter;
+    for (Lead l : leads) {
+      l.Status = OPEN_STATUS;
+    }
+    update leads;
   }
 
   private static Id resetSomchai() {
