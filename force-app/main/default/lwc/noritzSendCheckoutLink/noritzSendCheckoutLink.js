@@ -14,7 +14,7 @@ export default class NoritzSendCheckoutLink extends LightningElement {
     }
     this.isExecuting = true;
     try {
-      const result = await send({ contractId: this.recordId });
+      const result = await send({ recordId: this.recordId });
       this.toast(
         result.status === "Sent"
           ? "Checkout link sent"

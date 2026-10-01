@@ -10,47 +10,40 @@ public with sharing class SendCheckoutLinkAction {
     public String message;
   }
 
+  // recordId: a Contract (existing customer) or a Lead (new LINE customer before payment).
   @AuraEnabled
-  public static Result send(Id contractId) {
+  public static Result send(Id recordId) {
     Result result = new Result();
-    Contract c = [
-      SELECT
-        AccountId,
-        Status,
-        Account.FirstName,
-        Account.LastName,
-        Stripe_Sub_ID__c,
-        Subscription_Plan__c
-      FROM Contract
-      WHERE Id = :contractId
-    ];
-    if (String.isBlank(c.Stripe_Sub_ID__c)) {
+    Checkout checkout = recordId.getSObjectType() == Lead.SObjectType
+      ? forLead(recordId)
+      : forContract(recordId);
+    if (checkout.error != null) {
       result.status = 'Error';
-      result.message = 'This contract has no Stripe subscription id, so there is no checkout link to send.';
+      result.message = checkout.error;
       return result;
     }
 
-    String url = CHECKOUT_BASE_URL + c.Stripe_Sub_ID__c;
-    String plan = String.isBlank(c.Subscription_Plan__c)
-      ? ''
-      : ' ' + c.Subscription_Plan__c;
+    String url = CHECKOUT_BASE_URL + checkout.subscriptionId;
+    String plan = String.isBlank(checkout.plan) ? '' : ' ' + checkout.plan;
     String body =
-      LineMessagingService.addressAs(c.Account.FirstName, c.Account.LastName) +
+      LineMessagingService.addressAs(checkout.firstName, checkout.lastName) +
       'Thank you for choosing NORITZ. Please complete payment for your' +
       plan +
       ' package using the link below to start your service.\n' +
       url;
 
     LINE_Message__c saved = LineMessagingService.sendAndSave(
-      c.AccountId,
+      checkout.chatRecordId,
       body,
       'Checkout Link'
     );
+    // After the push: Apex allows DML after a callout, not before.
+    if (checkout.leadToUpdate != null) {
+      update checkout.leadToUpdate;
+    }
     if (saved.Delivery_Status__c == 'Sent') {
       result.status = 'Sent';
       result.message = 'The customer has it on LINE.';
-
-      // update new Contract(Id = contractId, Status = 'Pending Payment');
     } else if (saved.Delivery_Status__c == 'Failed') {
       result.status = 'Failed';
       result.message =
@@ -60,5 +53,75 @@ public with sharing class SendCheckoutLinkAction {
       result.message = 'The customer has no LINE account linked. The link was saved in the chat only.';
     }
     return result;
+  }
+
+  private class Checkout {
+    Id chatRecordId;
+    String firstName;
+    String lastName;
+    String plan;
+    String subscriptionId;
+    Lead leadToUpdate;
+    String error;
+  }
+
+  private static Checkout forContract(Id contractId) {
+    Contract c = [
+      SELECT
+        AccountId,
+        Account.FirstName,
+        Account.LastName,
+        Stripe_Sub_ID__c,
+        Subscription_Plan__c
+      FROM Contract
+      WHERE Id = :contractId
+    ];
+    Checkout checkout = new Checkout();
+    checkout.chatRecordId = c.AccountId;
+    checkout.firstName = c.Account.FirstName;
+    checkout.lastName = c.Account.LastName;
+    checkout.plan = c.Subscription_Plan__c;
+    checkout.subscriptionId = c.Stripe_Sub_ID__c;
+    if (String.isBlank(c.Stripe_Sub_ID__c)) {
+      checkout.error = 'This contract has no Stripe subscription id, so there is no checkout link to send.';
+    }
+    return checkout;
+  }
+
+  // A lead gets a mock subscription id the first time, and moves to Working - Contacted.
+  private static Checkout forLead(Id leadId) {
+    Lead l = [
+      SELECT
+        Id,
+        FirstName,
+        LastName,
+        IsConverted,
+        Subscription_Plan__c,
+        Stripe_Sub_ID__c
+      FROM Lead
+      WHERE Id = :leadId
+    ];
+    Checkout checkout = new Checkout();
+    checkout.chatRecordId = l.Id;
+    checkout.firstName = l.FirstName;
+    checkout.lastName = l.LastName;
+    checkout.plan = l.Subscription_Plan__c;
+    if (l.IsConverted) {
+      checkout.error = 'This lead is already a customer. Send the link from their contract.';
+      return checkout;
+    }
+    if (String.isBlank(l.Subscription_Plan__c)) {
+      checkout.error = 'Choose a Subscription Plan on the lead first.';
+      return checkout;
+    }
+    checkout.subscriptionId = String.isBlank(l.Stripe_Sub_ID__c)
+      ? 'sub_demo_' + String.valueOf(l.Id).right(6).toLowerCase()
+      : l.Stripe_Sub_ID__c;
+    checkout.leadToUpdate = new Lead(
+      Id = l.Id,
+      Stripe_Sub_ID__c = checkout.subscriptionId,
+      Status = 'Working - Contacted'
+    );
+    return checkout;
   }
 }

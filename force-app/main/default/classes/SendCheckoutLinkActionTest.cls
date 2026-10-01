@@ -108,4 +108,43 @@ private class SendCheckoutLinkActionTest {
     Assert.areEqual('Error', result.status);
     Assert.areEqual(0, [SELECT COUNT() FROM LINE_Message__c]);
   }
+
+  @IsTest
+  static void leadGetsLinkSubscriptionIdAndStatus() {
+    Lead l = new Lead(
+      LastName = 'Lead Friend',
+      LINE_User_ID__c = 'U_lead_9',
+      Subscription_Plan__c = 'Premium (1,500 THB)'
+    );
+    insert l;
+    LineMock mock = new LineMock(200);
+    Test.setMock(HttpCalloutMock.class, mock);
+
+    Test.startTest();
+    SendCheckoutLinkAction.Result result = SendCheckoutLinkAction.send(l.Id);
+    Test.stopTest();
+
+    Assert.areEqual('Sent', result.status);
+    Lead saved = [SELECT Stripe_Sub_ID__c, Status FROM Lead WHERE Id = :l.Id];
+    Assert.isTrue(saved.Stripe_Sub_ID__c.startsWith('sub_demo_'));
+    Assert.areEqual('Working - Contacted', saved.Status);
+    LINE_Message__c msg = [
+      SELECT Lead__c, Message_Type__c, Message_Body__c
+      FROM LINE_Message__c
+    ];
+    Assert.areEqual(l.Id, msg.Lead__c);
+    Assert.areEqual('Checkout Link', msg.Message_Type__c);
+    Assert.isTrue(msg.Message_Body__c.endsWith(saved.Stripe_Sub_ID__c));
+  }
+
+  @IsTest
+  static void leadWithoutPlanGetsNoLink() {
+    Lead l = new Lead(LastName = 'No Plan', LINE_User_ID__c = 'U_lead_10');
+    insert l;
+
+    SendCheckoutLinkAction.Result result = SendCheckoutLinkAction.send(l.Id);
+
+    Assert.areEqual('Error', result.status);
+    Assert.areEqual(0, [SELECT COUNT() FROM LINE_Message__c]);
+  }
 }
