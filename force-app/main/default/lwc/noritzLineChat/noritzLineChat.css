@@ -113,15 +113,20 @@
 .chat__composer {
   display: flex;
   gap: var(--slds-g-spacing-2, 0.5rem);
-  align-items: center;
+  /* Bottom-aligned so Send stays next to the last line as the box grows. */
+  align-items: flex-end;
   padding: var(--slds-g-spacing-3, 0.75rem) var(--slds-g-spacing-4, 1rem);
   border-top: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
 }
 
+/* Grows with the text (see autoSize in the JS) up to about 6 lines, then scrolls. */
 .chat__input {
   flex: 1;
   resize: none;
   min-height: 2.5rem;
+  max-height: 9rem;
+  overflow-y: hidden;
+  line-height: 1.4;
 }
 
 .chat__templates + .chat__composer {

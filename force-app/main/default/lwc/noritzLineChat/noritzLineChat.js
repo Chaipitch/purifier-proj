@@ -10,6 +10,8 @@ import getTemplates from "@salesforce/apex/NoritzLineChatController.getTemplates
 const CHANNEL = "/event/LINE_Chat_Refresh__e";
 const FALLBACK_POLL_SECONDS = 3;
 const URL_PATTERN = /https:\/\/\S+/;
+// Matches max-height in the CSS: beyond this the message box scrolls instead of growing.
+const INPUT_MAX_HEIGHT_PX = 144;
 const LINK_TYPES = new Set(["Checkout Link", "Payment Retry"]);
 
 const timeFormat = new Intl.DateTimeFormat("en-GB", {
@@ -192,11 +194,26 @@ export default class NoritzLineChat extends LightningElement {
     }
     this.draft = template.body;
     this.refs.input.value = template.body;
+    this.autoSize();
     this.refs.input.focus();
   }
 
   handleDraftChange(event) {
     this.draft = event.target.value;
+    this.autoSize();
+  }
+
+  // Fits the message box to its text, between one line and INPUT_MAX_HEIGHT_PX.
+  autoSize() {
+    const input = this.refs.input;
+    if (!input) {
+      return;
+    }
+    input.style.height = "auto";
+    const height = Math.min(input.scrollHeight, INPUT_MAX_HEIGHT_PX);
+    input.style.height = `${height}px`;
+    input.style.overflowY =
+      input.scrollHeight > INPUT_MAX_HEIGHT_PX ? "auto" : "hidden";
   }
 
   handleKeyDown(event) {
@@ -217,6 +234,7 @@ export default class NoritzLineChat extends LightningElement {
       const saved = await sendMessage({ recordId: this.recordId, body });
       this.draft = "";
       this.refs.input.value = "";
+      this.autoSize();
       this.rawMessages = [
         ...this.rawMessages.filter((m) => m.Id !== saved.Id),
         saved
