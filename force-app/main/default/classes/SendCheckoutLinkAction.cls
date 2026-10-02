@@ -66,20 +66,20 @@ public with sharing class SendCheckoutLinkAction {
   }
 
   private static Checkout forContract(Id contractId) {
-    Contract c = [
+    Contracts__c c = [
       SELECT
-        AccountId,
-        Account.FirstName,
-        Account.LastName,
+        Account__c,
+        Account__r.FirstName,
+        Account__r.LastName,
         Stripe_Sub_ID__c,
         Subscription_Plan__c
-      FROM Contract
+      FROM Contracts__c
       WHERE Id = :contractId
     ];
     Checkout checkout = new Checkout();
-    checkout.chatRecordId = c.AccountId;
-    checkout.firstName = c.Account.FirstName;
-    checkout.lastName = c.Account.LastName;
+    checkout.chatRecordId = c.Account__c;
+    checkout.firstName = c.Account__r.FirstName;
+    checkout.lastName = c.Account__r.LastName;
     checkout.plan = c.Subscription_Plan__c;
     checkout.subscriptionId = c.Stripe_Sub_ID__c;
     if (String.isBlank(c.Stripe_Sub_ID__c)) {

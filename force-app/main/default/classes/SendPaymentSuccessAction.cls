@@ -26,27 +26,27 @@ public with sharing class SendPaymentSuccessAction {
 
     public void execute(QueueableContext context) {
       List<LINE_Message__c> messages = new List<LINE_Message__c>();
-      for (Contract c : [
+      for (Contracts__c c : [
         SELECT
           Id,
-          AccountId,
-          Account.FirstName,
-          Account.LastName,
-          Account.LINE_User_ID__c
-        FROM Contract
+          Account__c,
+          Account__r.FirstName,
+          Account__r.LastName,
+          Account__r.LINE_User_ID__c
+        FROM Contracts__c
         WHERE Id IN :contractIds
       ]) {
         String body =
           LineMessagingService.addressAs(
-            c.Account.FirstName,
-            c.Account.LastName
+            c.Account__r.FirstName,
+            c.Account__r.LastName
           ) +
           'Thank you! We have successfully received the payment for your monthly subscription.';
 
         messages.add(
           LineMessagingService.outbound(
-            c.AccountId,
-            c.Account.LINE_User_ID__c,
+            c.Account__c,
+            c.Account__r.LINE_User_ID__c,
             body,
             'Text' // Updated from 'Payment Retry'
           )

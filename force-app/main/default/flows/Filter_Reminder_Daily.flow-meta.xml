@@ -46,7 +46,7 @@
         <name>NeedsReminder</name>
         <dataType>Boolean</dataType>
         <expression
-    >{!$Record.Next_Filter_Replacement__c} = TODAY() + 7 &amp;&amp; NOT(ISBLANK({!$Record.AccountId})) &amp;&amp; (ISBLANK({!$Record.Last_Filter_Reminder__c}) || {!$Record.Last_Filter_Reminder__c} &lt; TODAY() - 30)</expression>
+    >{!$Record.Next_Filter_Replacement__c} = TODAY() + 7 &amp;&amp; NOT(ISBLANK({!$Record.Account__c})) &amp;&amp; (ISBLANK({!$Record.Last_Filter_Reminder__c}) || {!$Record.Last_Filter_Reminder__c} &lt; TODAY() - 30)</expression>
     </formulas>
     <interviewLabel
   >Filter Reminder Daily {!$Flow.CurrentDateTime}</interviewLabel>
@@ -78,7 +78,7 @@
                 <booleanValue>false</booleanValue>
             </value>
         </filters>
-        <object>Asset</object>
+        <object>Assets__c</object>
         <schedule>
             <frequency>Daily</frequency>
             <startDate>2026-10-02</startDate>

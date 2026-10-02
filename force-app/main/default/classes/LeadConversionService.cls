@@ -45,11 +45,13 @@ public with sharing class LeadConversionService {
     );
 
     Date today = Date.today();
-    Contract contract = new Contract(
-      AccountId = accountId,
-      Status = 'Pending Payment',
-      StartDate = today,
-      ContractTerm = 12,
+    Contracts__c contract = new Contracts__c(
+      Account__c = accountId,
+      Lead__c = l.Id,
+      Status__c = 'Pending Payment',
+      Contract_Start_Date__c = today,
+      Contract_Term_months__c = 12,
+      Contract_End_Date__c = today.addMonths(12),
       Subscription_Plan__c = l.Subscription_Plan__c,
       Stripe_Sub_ID__c = l.Stripe_Sub_ID__c,
       // Not toStartOfMonth(): for a th_TH user it saves the Buddhist year.
@@ -82,9 +84,13 @@ public with sharing class LeadConversionService {
     }
     update messages;
 
-    List<Asset> assets = [SELECT Id FROM Asset WHERE Lead__c = :leadId];
-    for (Asset a : assets) {
-      a.AccountId = accountId;
+    List<Assets__c> assets = [
+      SELECT Id
+      FROM Assets__c
+      WHERE Lead__c = :leadId
+    ];
+    for (Assets__c a : assets) {
+      a.Account__c = accountId;
     }
     update assets;
   }

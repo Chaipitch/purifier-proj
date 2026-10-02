@@ -49,7 +49,7 @@
             <field>Account_Id__c</field>
             <value>
                 <elementReference
-        >$Record.Contract__r.AccountId</elementReference>
+        >$Record.Contract__r.Account__c</elementReference>
             </value>
         </inputAssignments>
         <object>LINE_Chat_Refresh__e</object>
@@ -69,7 +69,7 @@
             <operator>EqualTo</operator>
             <value>
                 <elementReference
-        >$Record.Contract__r.AccountId</elementReference>
+        >$Record.Contract__r.Account__c</elementReference>
             </value>
         </filters>
         <inputAssignments>
@@ -97,12 +97,12 @@
             </value>
         </filters>
         <inputAssignments>
-            <field>Status</field>
+            <field>Status__c</field>
             <value>
                 <stringValue>Active</stringValue>
             </value>
         </inputAssignments>
-        <object>Contract</object>
+        <object>Contracts__c</object>
     </recordUpdates>
     <start>
         <locationX>0</locationX>

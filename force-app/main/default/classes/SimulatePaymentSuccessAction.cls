@@ -14,14 +14,14 @@ public with sharing class SimulatePaymentSuccessAction {
         throw error;
       }
     }
-    Contract c = [
-      SELECT AccountId, Subscription_Plan__c
-      FROM Contract
+    Contracts__c c = [
+      SELECT Account__c, Subscription_Plan__c
+      FROM Contracts__c
       WHERE Id = :recordId
     ];
     insert new Payment_History__c(
       Contract__c = c.Id,
-      Account__c = c.AccountId,
+      Account__c = c.Account__c,
       Amount__c = SubscriptionPlans.priceOf(c.Subscription_Plan__c),
       Status__c = 'Success'
     );

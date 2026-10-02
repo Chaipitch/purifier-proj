@@ -24,15 +24,15 @@ public with sharing class SendPaymentRetryAction {
 
     public void execute(QueueableContext context) {
       List<LINE_Message__c> messages = new List<LINE_Message__c>();
-      for (Contract c : [
+      for (Contracts__c c : [
         SELECT
           Id,
-          AccountId,
-          Account.FirstName,
-          Account.LastName,
-          Account.LINE_User_ID__c,
+          Account__c,
+          Account__r.FirstName,
+          Account__r.LastName,
+          Account__r.LINE_User_ID__c,
           Stripe_Sub_ID__c
-        FROM Contract
+        FROM Contracts__c
         WHERE Id IN :contractIds
       ]) {
         String reference = String.isBlank(c.Stripe_Sub_ID__c)
@@ -40,8 +40,8 @@ public with sharing class SendPaymentRetryAction {
           : c.Stripe_Sub_ID__c;
         String body =
           LineMessagingService.addressAs(
-            c.Account.FirstName,
-            c.Account.LastName
+            c.Account__r.FirstName,
+            c.Account__r.LastName
           ) +
           'Payment failed for your monthly subscription. Please update your payment method using this link:\n' +
           RETRY_BASE_URL +
@@ -49,8 +49,8 @@ public with sharing class SendPaymentRetryAction {
           '/update-payment';
         messages.add(
           LineMessagingService.outbound(
-            c.AccountId,
-            c.Account.LINE_User_ID__c,
+            c.Account__c,
+            c.Account__r.LINE_User_ID__c,
             body,
             'Payment Retry'
           )

@@ -10,7 +10,7 @@ Everything the next person needs to run, change and support the demo. For a clic
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Salesforce org   | Developer Edition, CLI alias `noritz`: `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce.com`                                         |
 | App              | App Launcher → **Service Console**                                                                                                           |
-| Demo customer    | **Somchai Sukhumvit**, contract **00000101** (Premium, `sub_demo_12345`)                                                                     |
+| Demo customer    | **Somchai Sukhumvit**, Premium contract `sub_demo_12345` (custom `Contracts__c`; Reset Demo creates it if missing)                           |
 | LINE webhook URL | `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce-sites.com/line/services/apexrest/line/webhook`                                      |
 | Source           | `force-app/main/default` (SFDX). Git remotes: `origin` → github.com/wchaipitch-ts/noritz-ts, `purifier` → github.com/Chaipitch/purifier-proj |
 | Docs             | `docs/` (this folder) and `IMPLEMENTATION_PLAN.md` (round-1 tracker, run-book and decisions)                                                 |
@@ -60,14 +60,14 @@ The chat controller, the history card and the checkout action all use it.
 | Chat templates               | `objects/LINE_Chat_Template__mdt`, `customMetadata/LINE_Chat_Template.*`                                                                                                         |
 | Inbound LINE                 | `classes/LineWebhookHandler`, Site `line_webhook`, permission set `LINE_Webhook_Guest`                                                                                           |
 | Outbound LINE                | `classes/LineMessagingService`, Named Credential `LINE_Messaging_API`, External Credential `LINE_Messaging`                                                                      |
-| Checkout link                | `classes/SendCheckoutLinkAction`, `lwc/noritzSendCheckoutLink`, actions `Contract.Send_Checkout_Link`, `Lead.Send_Checkout_Link`                                                 |
+| Checkout link                | `classes/SendCheckoutLinkAction`, `lwc/noritzSendCheckoutLink`, actions `Contracts__c.Send_Checkout_Link`, `Lead.Send_Checkout_Link`                                             |
 | Payment success / conversion | `classes/SimulatePaymentSuccessAction`, `classes/LeadConversionService`, `classes/SendPaymentSuccessAction`, flow `Payment_Success_Recovery`, `lwc/noritzSimulatePaymentSuccess` |
 | Payment failure              | `classes/SimulatePaymentFailureAction`, `classes/SendPaymentRetryAction`, flow `Payment_Failure_Recovery`                                                                        |
-| Maintenance reminder         | `classes/SendFilterReminderAction`, flow `Filter_Reminder_Daily`, `lwc/noritzSendFilterReminder`, action `Asset.Send_Filter_Reminder`                                            |
+| Maintenance reminder         | `classes/SendFilterReminderAction`, flow `Filter_Reminder_Daily`, `lwc/noritzSendFilterReminder`, action `Assets__c.Send_Filter_Reminder`                                        |
 | Customer history             | `lwc/noritzCustomerHistory`, `classes/CustomerHistoryController`                                                                                                                 |
-| Reset                        | `classes/DemoResetAction`, `lwc/noritzResetDemo`, action `Contract.Reset_Demo`, `scripts/apex/reset_demo.apex`                                                                   |
+| Reset                        | `classes/DemoResetAction`, `lwc/noritzResetDemo`, action `Contracts__c.Reset_Demo`, `scripts/apex/reset_demo.apex`                                                               |
 | Prices                       | `classes/SubscriptionPlans` (Standard 900, Premium 1,500)                                                                                                                        |
-| Pages                        | `flexipages/Account_Record_Page`, `Lead_Record_Page`, `Case_Record_Page`                                                                                                         |
+| Pages                        | `flexipages/Account_Record_Page`, `Lead_Record_Page`, `Case_Record_Page`, `NORITZ_Contract_Record_Page`, `NORITZ_Asset_Record_Page`                                              |
 
 ## 4. Access
 
@@ -104,8 +104,8 @@ sf project deploy start --source-dir force-app/main/default/<path> --target-org 
 ## 7. Gotchas
 
 - **Thai locale:** for a th_TH user, `Date.year()` returns the Buddhist year (2569), and `Date.newInstance(2026, …)` and `toStartOfMonth()` save the wrong year. Use `addDays`, `Date.valueOf('yyyy-MM-dd')` and `String.valueOf(date)`.
-- **Contract status is one-way.** An activated contract (Active or Payment Failed) can't go back to Pending Payment, can't be deleted, and stops its Account being deleted. That's why the reset archives converted customers instead of deleting them.
-- **Assets need an Account.** `Asset.Lead__c` is only a back-reference; an Asset can't be saved with just a Lead.
+- **Contracts and assets are custom objects** (`Contracts__c`, `Assets__c`), not standard Contract and Asset. Their status moves freely, and an asset can belong to a Lead only. See [MIGRATION_CUSTOM_OBJECTS.md](MIGRATION_CUSTOM_OBJECTS.md).
+- **A conversion can't be undone,** so the reset archives converted customers and creates a fresh Lead in their place.
 - **Seeding payments in Apex fires flows.** A successful payment fires the Payment Success flow, which messages the customer. Set `SendPaymentSuccessAction.suppress = true` while seeding (the reset does).
 - **Callouts in tests** need `Test.setMock(HttpCalloutMock.class, new LineCalloutMock())`, including tests that insert payments, because the flows message LINE.
 - **The daily reminder flow** runs in the background, not as the agent. It has not been tested live yet. If its reminders come back "Not delivered" with an authorization error, the running user has no access to the LINE credential. Give that user the **LINE Chat User** permission set. The Asset button always runs as the agent who clicks it.

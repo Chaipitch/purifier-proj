@@ -9,9 +9,9 @@ public with sharing class CustomerHistoryController {
     @AuraEnabled
     public Id customerId;
     @AuraEnabled
-    public List<Asset> products = new List<Asset>();
+    public List<Assets__c> products = new List<Assets__c>();
     @AuraEnabled
-    public List<Contract> contracts = new List<Contract>();
+    public List<Contracts__c> contracts = new List<Contracts__c>();
     @AuraEnabled
     public List<Payment_History__c> payments = new List<Payment_History__c>();
   }
@@ -34,14 +34,14 @@ public with sharing class CustomerHistoryController {
       SELECT
         Id,
         Name,
-        Product2.Name,
-        SerialNumber,
+        Product__r.Name,
+        Serial_Number__c,
         Next_Filter_Replacement__c,
         Filter_Status_Icon__c
-      FROM Asset
+      FROM Assets__c
       WHERE
-        (AccountId != NULL
-        AND AccountId = :accountId)
+        (Account__c != NULL
+        AND Account__c = :accountId)
         OR (Lead__c != NULL
         AND Lead__c = :leadId)
       ORDER BY CreatedDate DESC
@@ -50,14 +50,14 @@ public with sharing class CustomerHistoryController {
       history.contracts = [
         SELECT
           Id,
-          ContractNumber,
+          Name,
           Subscription_Plan__c,
-          Status,
-          StartDate,
+          Status__c,
+          Contract_Start_Date__c,
           Next_Billing_Date__c
-        FROM Contract
-        WHERE AccountId = :accountId
-        ORDER BY StartDate DESC NULLS LAST, CreatedDate DESC
+        FROM Contracts__c
+        WHERE Account__c = :accountId
+        ORDER BY Contract_Start_Date__c DESC NULLS LAST, CreatedDate DESC
       ];
     }
     history.payments = [
@@ -68,11 +68,11 @@ public with sharing class CustomerHistoryController {
         Amount__c,
         Status__c,
         Failure_Reason__c,
-        Contract__r.ContractNumber
+        Contract__r.Name
       FROM Payment_History__c
       WHERE
-        (Contract__r.AccountId != NULL
-        AND Contract__r.AccountId = :accountId)
+        (Contract__r.Account__c != NULL
+        AND Contract__r.Account__c = :accountId)
         OR (Lead__c != NULL
         AND Lead__c = :leadId)
       ORDER BY CreatedDate DESC, Name DESC

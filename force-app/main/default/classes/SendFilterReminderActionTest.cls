@@ -13,16 +13,16 @@ private class SendFilterReminderActionTest {
     );
     insert acc;
     // Date.valueOf, not newInstance: newInstance reads the year as Buddhist for a th_TH user.
-    insert new Asset(
+    insert new Assets__c(
       Name = 'NORITZ Pure Water X1',
-      SerialNumber = 'NZ-2026-9981',
-      AccountId = acc.Id,
+      Serial_Number__c = 'NZ-2026-9981',
+      Account__c = acc.Id,
       Next_Filter_Replacement__c = Date.valueOf('2026-10-07')
     );
   }
 
-  static Asset asset() {
-    return [SELECT Id, AccountId FROM Asset LIMIT 1];
+  static Assets__c asset() {
+    return [SELECT Id, Account__c FROM Assets__c LIMIT 1];
   }
 
   @IsTest
@@ -41,7 +41,7 @@ private class SendFilterReminderActionTest {
       SELECT Account__c, Message_Type__c, Message_Body__c, Delivery_Status__c
       FROM LINE_Message__c
     ];
-    Assert.areEqual(asset().AccountId, msg.Account__c);
+    Assert.areEqual(asset().Account__c, msg.Account__c);
     Assert.areEqual('Filter Reminder', msg.Message_Type__c);
     Assert.areEqual(
       'Hi Somchai,\nThe filter on your NORITZ Pure Water X1 (NZ-2026-9981) is due for replacement on 7 Oct 2026. Reply here to book a technician visit.',
@@ -50,7 +50,7 @@ private class SendFilterReminderActionTest {
     Assert.isTrue(mock.lastBody.contains('U_filter'));
     Assert.areEqual(
       Date.today(),
-      [SELECT Last_Filter_Reminder__c FROM Asset LIMIT 1]
+      [SELECT Last_Filter_Reminder__c FROM Assets__c LIMIT 1]
       .Last_Filter_Reminder__c
     );
   }
@@ -68,7 +68,7 @@ private class SendFilterReminderActionTest {
 
   @IsTest
   static void assetWithoutDateGetsNoReminder() {
-    Asset a = asset();
+    Assets__c a = asset();
     a.Next_Filter_Replacement__c = null;
     update a;
 

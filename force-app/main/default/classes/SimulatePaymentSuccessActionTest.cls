@@ -11,11 +11,11 @@ private class SimulatePaymentSuccessActionTest {
       LINE_User_ID__c = 'U_payer'
     );
     insert acc;
-    Contract c = new Contract(
-      AccountId = acc.Id,
-      Status = 'Pending Payment',
-      StartDate = Date.today(),
-      ContractTerm = 12,
+    Contracts__c c = new Contracts__c(
+      Account__c = acc.Id,
+      Status__c = 'Pending Payment',
+      Contract_Start_Date__c = Date.today(),
+      Contract_Term_months__c = 12,
       Subscription_Plan__c = 'Standard (900 THB)'
     );
     insert c;
@@ -36,7 +36,7 @@ private class SimulatePaymentSuccessActionTest {
     Assert.areEqual(acc.Id, p.Account__c);
     Assert.areEqual(
       'Active',
-      [SELECT Status FROM Contract WHERE Id = :c.Id].Status
+      [SELECT Status__c FROM Contracts__c WHERE Id = :c.Id].Status__c
     );
   }
 }

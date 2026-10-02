@@ -17,6 +17,8 @@ private class LeadConversionServiceTest {
       Direction__c = 'Inbound',
       Message_Body__c = '[Added the OA as a friend]'
     );
+    // A custom asset can be recorded against the lead before it becomes a customer.
+    insert new Assets__c(Name = 'NORITZ Pure Water X1', Lead__c = l.Id);
   }
 
   static Lead lead() {
@@ -51,18 +53,19 @@ private class LeadConversionServiceTest {
       [SELECT IsConverted FROM Lead WHERE Id = :lead().Id].IsConverted
     );
 
-    Contract c = [
-      SELECT Status, Subscription_Plan__c, Stripe_Sub_ID__c
-      FROM Contract
-      WHERE AccountId = :accountId
+    Contracts__c c = [
+      SELECT Status__c, Subscription_Plan__c, Stripe_Sub_ID__c, Lead__c
+      FROM Contracts__c
+      WHERE Account__c = :accountId
     ];
     Assert.areEqual(
       'Active',
-      c.Status,
+      c.Status__c,
       'Activated by the Payment Success flow'
     );
     Assert.areEqual('Standard (900 THB)', c.Subscription_Plan__c);
     Assert.areEqual('sub_demo_lead01', c.Stripe_Sub_ID__c);
+    Assert.areEqual(lead().Id, c.Lead__c);
 
     Payment_History__c p = [
       SELECT Amount__c, Status__c, Lead__c
@@ -78,6 +81,11 @@ private class LeadConversionServiceTest {
       [SELECT Account__c FROM LINE_Message__c WHERE Direction__c = 'Inbound']
       .Account__c,
       'The lead chat moves to the customer'
+    );
+    Assert.areEqual(
+      accountId,
+      [SELECT Account__c FROM Assets__c].Account__c,
+      'The lead assets move to the customer'
     );
   }
 

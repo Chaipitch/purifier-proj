@@ -103,10 +103,10 @@ export default class NoritzCustomerHistory extends LightningElement {
   get products() {
     return this.rawProducts.map((a) => ({
       id: a.Id,
-      url: `/lightning/r/Asset/${a.Id}/view`,
+      url: `/lightning/r/Assets__c/${a.Id}/view`,
       name: a.Name,
-      product: a.Product2?.Name,
-      serial: a.SerialNumber,
+      product: a.Product__r?.Name,
+      serial: a.Serial_Number__c,
       nextFilter: formatDate(a.Next_Filter_Replacement__c),
       filterStatus: a.Filter_Status_Icon__c
     }));
@@ -115,11 +115,11 @@ export default class NoritzCustomerHistory extends LightningElement {
   get contracts() {
     return this.rawContracts.map((c) => ({
       id: c.Id,
-      url: `/lightning/r/Contract/${c.Id}/view`,
-      number: c.ContractNumber,
+      url: `/lightning/r/Contracts__c/${c.Id}/view`,
+      number: c.Name,
       plan: c.Subscription_Plan__c || "No plan",
-      status: c.Status,
-      badgeClass: CONTRACT_BADGE[c.Status] || "badge",
+      status: c.Status__c,
+      badgeClass: CONTRACT_BADGE[c.Status__c] || "badge",
       nextBilling: formatDate(c.Next_Billing_Date__c)
     }));
   }
@@ -133,7 +133,7 @@ export default class NoritzCustomerHistory extends LightningElement {
         amount: p.Amount__c == null ? "—" : money.format(p.Amount__c),
         status: p.Status__c,
         reason: failed ? p.Failure_Reason__c : undefined,
-        contract: p.Contract__r?.ContractNumber,
+        contract: p.Contract__r?.Name,
         rowClass: failed ? "payment payment_failed" : "payment"
       };
     });

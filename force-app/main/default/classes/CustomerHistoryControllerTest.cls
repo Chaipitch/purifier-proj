@@ -11,16 +11,16 @@ private class CustomerHistoryControllerTest {
       LastName = 'History'
     );
     insert acc;
-    insert new Asset(
+    insert new Assets__c(
       Name = 'NORITZ Pure Water X1',
-      SerialNumber = 'NZ-1',
-      AccountId = acc.Id
+      Serial_Number__c = 'NZ-1',
+      Account__c = acc.Id
     );
-    Contract c = new Contract(
-      AccountId = acc.Id,
-      Status = 'Pending Payment',
-      StartDate = Date.today(),
-      ContractTerm = 12,
+    Contracts__c c = new Contracts__c(
+      Account__c = acc.Id,
+      Status__c = 'Pending Payment',
+      Contract_Start_Date__c = Date.today(),
+      Contract_Term_months__c = 12,
       Subscription_Plan__c = 'Premium (1,500 THB)'
     );
     insert c;
@@ -77,5 +77,19 @@ private class CustomerHistoryControllerTest {
     Assert.areEqual(l.Id, h.customerId);
     Assert.isTrue(h.contracts.isEmpty());
     Assert.isTrue(h.payments.isEmpty());
+  }
+
+  // Custom assets can belong to a lead before it becomes a customer.
+  @IsTest
+  static void leadShowsItsOwnProducts() {
+    Lead l = new Lead(LastName = 'With Product');
+    insert l;
+    insert new Assets__c(Name = 'NORITZ Pure Water X1', Lead__c = l.Id);
+
+    CustomerHistoryController.History h = CustomerHistoryController.getHistory(
+      l.Id
+    );
+
+    Assert.areEqual(1, h.products.size());
   }
 }

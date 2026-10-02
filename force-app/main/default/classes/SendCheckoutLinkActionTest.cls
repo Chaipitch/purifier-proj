@@ -27,18 +27,20 @@ private class SendCheckoutLinkActionTest {
       LINE_User_ID__c = 'U_test_123'
     );
     insert acc;
-    insert new Contract(
-      AccountId = acc.Id,
-      Status = 'Pending Payment',
-      StartDate = Date.today(),
-      ContractTerm = 12,
+    insert new Contracts__c(
+      Account__c = acc.Id,
+      Status__c = 'Pending Payment',
+      Contract_Start_Date__c = Date.today(),
+      Contract_Term_months__c = 12,
       Subscription_Plan__c = 'Premium (1,500 THB)',
       Stripe_Sub_ID__c = 'sub_demo_12345'
     );
   }
 
   static SendCheckoutLinkAction.Result run() {
-    return SendCheckoutLinkAction.send([SELECT Id FROM Contract LIMIT 1].Id);
+    return SendCheckoutLinkAction.send(
+      [SELECT Id FROM Contracts__c LIMIT 1].Id
+    );
   }
 
   @IsTest
@@ -99,7 +101,7 @@ private class SendCheckoutLinkActionTest {
 
   @IsTest
   static void refusesContractWithoutSubscriptionId() {
-    Contract c = [SELECT Id FROM Contract LIMIT 1];
+    Contracts__c c = [SELECT Id FROM Contracts__c LIMIT 1];
     c.Stripe_Sub_ID__c = null;
     update c;
 

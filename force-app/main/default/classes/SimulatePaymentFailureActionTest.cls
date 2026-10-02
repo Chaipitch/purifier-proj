@@ -22,24 +22,21 @@ private class SimulatePaymentFailureActionTest {
       Customer_Status__c = 'Active'
     );
     insert acc;
-    Contract c = new Contract(
-      AccountId = acc.Id,
-      Status = 'Pending Payment',
-      StartDate = Date.today(),
-      ContractTerm = 12,
+    insert new Contracts__c(
+      Account__c = acc.Id,
+      Status__c = 'Active',
+      Contract_Start_Date__c = Date.today(),
+      Contract_Term_months__c = 12,
       Subscription_Plan__c = 'Premium (1,500 THB)',
       Stripe_Sub_ID__c = 'sub_demo_12345'
     );
-    insert c;
-    c.Status = 'Active';
-    update c;
   }
 
   // End to end: button -> failed payment -> Payment Failure Recovery flow -> retry message on LINE.
   @IsTest
   static void failedPaymentRunsTheWholeRecovery() {
     Test.setMock(HttpCalloutMock.class, new LineMock());
-    Contract c = [SELECT Id, AccountId FROM Contract LIMIT 1];
+    Contracts__c c = [SELECT Id, Account__c FROM Contracts__c LIMIT 1];
 
     Test.startTest();
     SimulatePaymentFailureAction.simulate(c.Id);
@@ -52,15 +49,15 @@ private class SimulatePaymentFailureActionTest {
     Assert.areEqual(1500, p.Amount__c);
     Assert.areEqual('Failed', p.Status__c);
     Assert.areEqual('Card Expired (ERR-02)', p.Failure_Reason__c);
-    Assert.areEqual(c.AccountId, p.Account__c);
+    Assert.areEqual(c.Account__c, p.Account__c);
 
     Assert.areEqual(
       'Payment Failed',
-      [SELECT Status FROM Contract WHERE Id = :c.Id].Status
+      [SELECT Status__c FROM Contracts__c WHERE Id = :c.Id].Status__c
     );
     Assert.areEqual(
       'Payment Suspended',
-      [SELECT Customer_Status__c FROM Account WHERE Id = :c.AccountId]
+      [SELECT Customer_Status__c FROM Account WHERE Id = :c.Account__c]
       .Customer_Status__c
     );
 
@@ -75,7 +72,7 @@ private class SimulatePaymentFailureActionTest {
       )
     );
     Assert.areEqual('Sent', msg.Delivery_Status__c);
-    Assert.areEqual(c.AccountId, msg.Account__c);
+    Assert.areEqual(c.Account__c, msg.Account__c);
     Assert.isTrue(
       msg.Message_Body__c.endsWith(
         'https://checkout.stripe.com/demo/sub_demo_12345/update-payment'
@@ -85,7 +82,7 @@ private class SimulatePaymentFailureActionTest {
 
   @IsTest
   static void successfulPaymentDoesNotTriggerRecovery() {
-    Contract c = [SELECT Id, AccountId FROM Contract LIMIT 1];
+    Contracts__c c = [SELECT Id FROM Contracts__c LIMIT 1];
     // The payment success flow sends a "payment received" message.
     Test.setMock(HttpCalloutMock.class, new LineCalloutMock());
 
@@ -99,7 +96,7 @@ private class SimulatePaymentFailureActionTest {
 
     Assert.areEqual(
       'Active',
-      [SELECT Status FROM Contract WHERE Id = :c.Id].Status
+      [SELECT Status__c FROM Contracts__c WHERE Id = :c.Id].Status__c
     );
     Assert.areEqual(
       0,

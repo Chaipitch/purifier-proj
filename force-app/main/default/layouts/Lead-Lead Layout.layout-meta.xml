@@ -386,20 +386,18 @@
         <relatedList>RelatedEmailStatusList</relatedList>
     </relatedLists>
     <relatedLists>
-        <fields>ASSET.NAME</fields>
-        <fields>ASSET.SERIAL_NUMBER</fields>
-        <fields>ASSET.INSTALL_DATE</fields>
-        <fields>ACCOUNT.NAME</fields>
-        <fields>CONTACT.NAME</fields>
-        <fields>PRODUCT2.NAME</fields>
-        <relatedList>Asset.Lead__c</relatedList>
+        <fields>NAME</fields>
+        <fields>Serial_Number__c</fields>
+        <fields>Next_Filter_Replacement__c</fields>
+        <fields>Status__c</fields>
+        <relatedList>Assets__c.Lead__c</relatedList>
     </relatedLists>
     <relatedLists>
-        <fields>CONTRACT.CONTRACT_NUMBER</fields>
-        <fields>CONTRACT.NAME</fields>
-        <fields>SALES.ACCOUNT.NAME</fields>
-        <fields>CONTRACT.STATUS</fields>
-        <relatedList>Contract.Lead__c</relatedList>
+        <fields>NAME</fields>
+        <fields>Subscription_Plan__c</fields>
+        <fields>Status__c</fields>
+        <fields>Next_Billing_Date__c</fields>
+        <relatedList>Contracts__c.Lead__c</relatedList>
     </relatedLists>
     <relatedLists>
         <fields>NAME</fields>

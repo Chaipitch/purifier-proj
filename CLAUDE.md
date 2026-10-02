@@ -28,27 +28,40 @@ Objects and fields are **already created in the org**. Assume this schema exists
 | `LINE_User_ID__c` | Text | test LINE account ID |
 | `Customer_Status__c` | Picklist | Prospect, Active, Payment Suspended |
 
-### Contract
+> **Update (2026-10-02):** the consultant replaced standard Contract and Asset with the custom objects `Contracts__c` and `Assets__c`. The tables below describe them. Migration steps: `docs/MIGRATION_CUSTOM_OBJECTS.md`.
+
+### Contracts__c (custom, replaces Contract)
 | API Name | Type | Notes |
 |---|---|---|
-| `AccountId` | Lookup | to the Person Account |
-| `Status` | Picklist | standard — see warning in §2 |
+| `Name` | Auto Number | |
+| `Account__c` | Lookup | to the Person Account |
+| `Lead__c` | Lookup | to the Lead, before conversion |
+| `Status__c` | Picklist | Pending Payment, Active, Payment Failed |
 | `Subscription_Plan__c` | Picklist | Standard (900 THB), Premium (1,500 THB) |
 | `Stripe_Sub_ID__c` | Text | e.g. `sub_demo_12345` |
 | `Next_Billing_Date__c` | Date | 1st of current month |
+| `Contract_Start_Date__c`, `Contract_End_Date__c` | Date | |
+| `Contract_Term_months__c` | Number | 12 |
+| `Description__c` | Long Text | |
 
-### Asset
+### Assets__c (custom, replaces Asset)
 | API Name | Type | Notes |
 |---|---|---|
 | `Name` | Text | NORITZ Pure Water X1 |
-| `SerialNumber` | Text | NZ-2026-9981 |
+| `Account__c` / `Lead__c` | Lookup | an asset can belong to a Lead only |
+| `Serial_Number__c` | Text | NZ-2026-9981 |
 | `Next_Filter_Replacement__c` | Date | ~14 days from today |
 | `Filter_Status_Icon__c` | Formula (Text) | 🟢 OK / 🟡 due within 30 days / 🔴 overdue |
+| `Last_Filter_Reminder__c` | Date | stops the daily reminder sending twice |
+| `Install_Date__c`, `Usage_End_Date__c` | Date | |
+| `Status__c` | Picklist | Purchased, Installed, Obsolete |
+| `Product__c` | Lookup | to Product2 |
+| `Price__c` | Currency | |
 
 ### Payment_History__c
 | API Name | Type | Notes |
 |---|---|---|
-| `Contract__c` | Master-Detail | to Contract — **required**, see §2 |
+| `Contract__c` | Master-Detail | to `Contracts__c` — **required**, see §2 |
 | `Amount__c` | Currency (THB) | |
 | `Status__c` | Picklist | Success, Failed |
 | `Failure_Reason__c` | Text | e.g. Card Expired (ERR-02) |
@@ -59,11 +72,11 @@ Objects and fields are **already created in the org**. Assume this schema exists
 
 These were found while reviewing the spec. Build to the decision, not to the original spec text.
 
-1. **Contract Status.** The standard `Status` field is bound to status categories (Draft / In Approval / Activated). Activated contracts lock fields and can't move freely between categories. **Decision:** add and drive everything from a custom `Subscription_Status__c` picklist on Contract — `Pending Payment`, `Active`, `Payment Failed`. Leave standard `Status` alone (keep it in Draft category). Create this field if it isn't there yet.
+1. **Contract Status.** *Superseded:* the custom `Contracts__c.Status__c` picklist (`Pending Payment`, `Active`, `Payment Failed`) has no status categories, so it moves freely in any direction. The standard Contract and its activation lock are no longer used.
 2. **Digital Engagement is not available in Developer Edition.** **Decision:** the LINE chat is a **mock LWC** backed by a custom `LINE_Message__c` object. Create that object if it doesn't exist (§3, Task 2). A real LINE Messaging API push is an optional stretch goal only — do not start it until Tasks 1–9 are done and green.
 3. **The Apex sample in the spec is broken.** It inserts a `Payment_History__c` without `Contract__c`, which fails because the field is a required Master-Detail. The rewritten handler must resolve the Contract via `Stripe_Sub_ID__c` from the payload.
 4. **Styling limits.** Standard highlights panels can't render coloured badges, and standard related lists can't render bold red rows. Both the header and the payment card must be custom LWCs.
-5. **Path field.** The spec's wireframe Path (Lead → Pending → Active → Renewal) matches no field in the data model. **Decision:** run the Path on Contract `Subscription_Plan__c`… no — run it on `Subscription_Status__c` with the three values above. Flag it to the user if that looks wrong.
+5. **Path field.** The spec's wireframe Path (Lead → Pending → Active → Renewal) matches no field in the data model. **Decision:** the Path runs on `Contracts__c.Status__c` with the three values above (`pathAssistants/Contract_Status_Path`).
 6. **"Stripe Hosted Checkout (Krungsri Payment Gateway)"** names two different providers. For the demo, everything Stripe-side is mocked, so this doesn't block the build. It is an open question for the client, not for you.
 
 ---

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Last_Filter_Reminder__c</fullName>
+    <description
+  >When the last LINE filter-replacement reminder was sent. Stops the daily flow sending it twice.</description>
+    <label>Last Filter Reminder</label>
+    <required>false</required>
+    <type>Date</type>
+</CustomField>

@@ -97,21 +97,21 @@ Use a LINE account that isn't linked to any Account or Lead yet (or block and re
 
 ### H. Existing customer scenarios (Somchai)
 
-| Step                                                  | Expected                                                                      |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------- |
-| H1. Contract 00000101 → **Send Stripe Checkout Link** | Link arrives on the phone, shows in Somchai's chat                            |
-| H2. Contract 00000101 → **Simulate Payment Failure**  | As in E                                                                       |
-| H3. Contract 00000101 → **Simulate Payment Success**  | Contract back to **Active**, customer Active, "payment received" on the phone |
+| Step                                                   | Expected                                                                      |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| H1. Somchai's contract → **Send Stripe Checkout Link** | Link arrives on the phone, shows in Somchai's chat                            |
+| H2. Somchai's contract → **Simulate Payment Failure**  | As in E                                                                       |
+| H3. Somchai's contract → **Simulate Payment Success**  | Contract back to **Active**, customer Active, "payment received" on the phone |
 
 ### I. Reset
 
-| Step                                   | Expected                                                                                                                                                  |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| I1. Contract 00000101 → **Reset Demo** | Toast, then the page reloads. No LINE messages arrive on the phone                                                                                        |
-| I2. Somchai                            | Active, 2 successful payments, 3 starting chat messages                                                                                                   |
-| I3. The customer converted in D        | Renamed **Archived - <name>**, LINE User ID empty                                                                                                         |
-| I4. Leads                              | A fresh Lead with the same name, LINE account and plan, Status **Open - Not Contacted**, chat showing only "[Added the OA as a friend]". Repeat C–D on it |
-| I5. Click Reset Demo again             | Same result (safe to repeat)                                                                                                                              |
+| Step                                    | Expected                                                                                                                                                  |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I1. Somchai's contract → **Reset Demo** | Toast, then the page reloads. No LINE messages arrive on the phone                                                                                        |
+| I2. Somchai                             | Active, 2 successful payments, 3 starting chat messages                                                                                                   |
+| I3. The customer converted in D         | Renamed **Archived - <name>**, LINE User ID empty                                                                                                         |
+| I4. Leads                               | A fresh Lead with the same name, LINE account and plan, Status **Open - Not Contacted**, chat showing only "[Added the OA as a friend]". Repeat C–D on it |
+| I5. Click Reset Demo again              | Same result (safe to repeat)                                                                                                                              |
 
 ## 4. If a step fails
 

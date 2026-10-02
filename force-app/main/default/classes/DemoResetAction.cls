@@ -1,5 +1,6 @@
-// "Reset Demo" button on the Contract page: puts the demo customers back to their pre-demo state.
-// Safe to run any number of times. Touches Somchai Sukhumvit, every customer and lead linked to
+// "Reset Demo" button on the contract (Contracts__c) page: puts the demo customers back to their
+// pre-demo state, creating Somchai's contract and purifier if they are missing. Safe to run any
+// number of times. Touches Somchai Sukhumvit, every customer and lead linked to
 // LINE, and customers converted from a LINE lead (they become a fresh lead again). Records without
 // a LINE User ID are left alone. scripts/apex/reset_demo.apex calls the same code.
 public with sharing class DemoResetAction {
@@ -7,6 +8,10 @@ public with sharing class DemoResetAction {
   @TestVisible
   private static final String ARCHIVED_PREFIX = 'Archived - ';
   private static final String OPEN_STATUS = 'Open - Not Contacted';
+  @TestVisible
+  private static final String SOMCHAI_SUB_ID = 'sub_demo_12345';
+  @TestVisible
+  private static final String SOMCHAI_SERIAL = 'NZ-2026-9981';
 
   @AuraEnabled
   public static void reset() {
@@ -16,9 +21,9 @@ public with sharing class DemoResetAction {
     resetLineLeads();
   }
 
-  // A conversion can't be undone, and an account with an activated contract can't be deleted.
-  // So the converted customer is archived (renamed, LINE id cleared) and a new lead with the same
-  // LINE id, name and plan takes its place: the next run starts from a lead again.
+  // A conversion can't be undone. So the converted customer is archived (renamed, LINE id
+  // cleared) and a new lead with the same LINE id, name and plan takes its place: the next run
+  // starts from a lead again.
   private static void restoreConvertedLeads() {
     List<Account> converted = [
       SELECT Id, FirstName, LastName, LINE_User_ID__c
@@ -110,30 +115,56 @@ public with sharing class DemoResetAction {
       throw error('Demo customer Somchai Sukhumvit was not found.');
     }
     Account somchai = accounts[0];
-    List<Contract> contracts = [
+    Date today = Date.today();
+
+    // Created on the first run, restored on every run after that.
+    List<Contracts__c> contracts = [
       SELECT Id
-      FROM Contract
-      WHERE AccountId = :somchai.Id
+      FROM Contracts__c
+      WHERE Stripe_Sub_ID__c = :SOMCHAI_SUB_ID
       ORDER BY CreatedDate
       LIMIT 1
     ];
-    if (contracts.isEmpty()) {
-      throw error('Somchai Sukhumvit has no contract.');
+    Contracts__c contract = contracts.isEmpty()
+      ? new Contracts__c()
+      : contracts[0];
+    if (contract.Id != null) {
+      delete [
+        SELECT Id
+        FROM Payment_History__c
+        WHERE Contract__c = :contract.Id
+      ];
     }
-    Contract contract = contracts[0];
-
-    delete [SELECT Id FROM Payment_History__c WHERE Contract__c = :contract.Id];
     delete [SELECT Id FROM LINE_Message__c WHERE Account__c = :somchai.Id];
 
-    // Pending Payment -> Active and Payment Failed -> Active are both allowed; Active can never
-    // go back to Pending Payment, so the reset state is Active.
-    contract.Status = 'Active';
+    Date startDate = today.addMonths(-3);
+    contract.Account__c = somchai.Id;
+    contract.Status__c = 'Active';
     contract.Subscription_Plan__c = 'Premium (1,500 THB)';
-    contract.Stripe_Sub_ID__c = 'sub_demo_12345';
+    contract.Stripe_Sub_ID__c = SOMCHAI_SUB_ID;
+    contract.Contract_Start_Date__c = startDate;
+    contract.Contract_Term_months__c = 12;
+    contract.Contract_End_Date__c = startDate.addMonths(12);
     // Not toStartOfMonth(): for a th_TH user it rebuilds the date from the Buddhist year and saves 2569.
-    Date today = Date.today();
     contract.Next_Billing_Date__c = today.addDays(1 - today.day());
-    update contract;
+    upsert contract;
+
+    List<Assets__c> assets = [
+      SELECT Id
+      FROM Assets__c
+      WHERE Serial_Number__c = :SOMCHAI_SERIAL
+      ORDER BY CreatedDate
+      LIMIT 1
+    ];
+    Assets__c purifier = assets.isEmpty() ? new Assets__c() : assets[0];
+    purifier.Name = 'NORITZ Pure Water X1';
+    purifier.Serial_Number__c = SOMCHAI_SERIAL;
+    purifier.Account__c = somchai.Id;
+    purifier.Status__c = 'Installed';
+    purifier.Install_Date__c = startDate;
+    purifier.Next_Filter_Replacement__c = today.addDays(14);
+    purifier.Last_Filter_Reminder__c = null;
+    upsert purifier;
 
     somchai.Customer_Status__c = 'Active';
     update somchai;
@@ -167,8 +198,7 @@ public with sharing class DemoResetAction {
 
   // Everyone else with a LINE User ID (for example people who added the OA while testing).
   // Payments and chat are cleared except the "added as a friend" line. Payment Failed contracts
-  // go back to Active: an activated contract can't return to Pending Payment or be deleted.
-  // The customer is Active if they have an Active contract, otherwise Prospect.
+  // go back to Active. The customer is Active if they have an Active contract, otherwise Prospect.
   private static void resetLineFriends(Id somchaiId) {
     Map<Id, Account> friends = new Map<Id, Account>(
       [
@@ -185,7 +215,7 @@ public with sharing class DemoResetAction {
     delete [
       SELECT Id
       FROM Payment_History__c
-      WHERE Contract__r.AccountId IN :friendIds
+      WHERE Contract__r.Account__c IN :friendIds
     ];
     List<LINE_Message__c> chatter = new List<LINE_Message__c>();
     for (LINE_Message__c m : [
@@ -199,18 +229,18 @@ public with sharing class DemoResetAction {
     }
     delete chatter;
 
-    List<Contract> contracts = [
-      SELECT Id, AccountId, Status
-      FROM Contract
-      WHERE AccountId IN :friendIds
+    List<Contracts__c> contracts = [
+      SELECT Id, Account__c, Status__c
+      FROM Contracts__c
+      WHERE Account__c IN :friendIds
     ];
     Set<Id> withActiveContract = new Set<Id>();
-    for (Contract c : contracts) {
-      if (c.Status == 'Payment Failed') {
-        c.Status = 'Active';
+    for (Contracts__c c : contracts) {
+      if (c.Status__c == 'Payment Failed') {
+        c.Status__c = 'Active';
       }
-      if (c.Status == 'Active') {
-        withActiveContract.add(c.AccountId);
+      if (c.Status__c == 'Active') {
+        withActiveContract.add(c.Account__c);
       }
     }
     update contracts;

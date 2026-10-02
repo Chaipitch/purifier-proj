@@ -31,22 +31,32 @@ private class DemoResetActionTest {
     );
     insert new List<Account>{ somchai, meng, other, newFriend };
 
-    List<Contract> contracts = new List<Contract>();
+    List<Contracts__c> contracts = new List<Contracts__c>();
     for (Account a : new List<Account>{ somchai, meng, other }) {
       contracts.add(
-        new Contract(
-          AccountId = a.Id,
-          Status = 'Pending Payment',
-          StartDate = Date.today(),
-          ContractTerm = 12,
+        new Contracts__c(
+          Account__c = a.Id,
+          Status__c = 'Pending Payment',
+          Contract_Start_Date__c = Date.today(),
+          Contract_Term_months__c = 12,
           Subscription_Plan__c = 'Standard (900 THB)'
         )
       );
     }
-    insert contracts;
+    // Somchai's demo contract mid-demo: failed payment, wrong plan.
+    contracts[0].Stripe_Sub_ID__c = DemoResetAction.SOMCHAI_SUB_ID;
+    contracts[0].Status__c = 'Payment Failed';
     // Meng's contract has been through a payment failure.
-    contracts[1].Status = 'Payment Failed';
-    update contracts[1];
+    contracts[1].Status__c = 'Payment Failed';
+    insert contracts;
+
+    insert new Assets__c(
+      Name = 'NORITZ Pure Water X1',
+      Serial_Number__c = DemoResetAction.SOMCHAI_SERIAL,
+      Account__c = somchai.Id,
+      Next_Filter_Replacement__c = Date.today().addDays(-3),
+      Last_Filter_Reminder__c = Date.today()
+    );
 
     List<LINE_Message__c> messages = new List<LINE_Message__c>();
     for (Account a : new List<Account>{ somchai, meng, other, newFriend }) {
@@ -76,22 +86,22 @@ private class DemoResetActionTest {
     DemoResetAction.reset();
     Test.stopTest();
 
-    Contract somchaiContract = [
+    Contracts__c somchaiContract = [
       SELECT
-        Status,
+        Status__c,
         Subscription_Plan__c,
         Stripe_Sub_ID__c,
-        Account.Customer_Status__c
-      FROM Contract
-      WHERE Account.Name = 'Somchai Sukhumvit'
+        Account__r.Customer_Status__c
+      FROM Contracts__c
+      WHERE Account__r.Name = 'Somchai Sukhumvit'
     ];
-    Assert.areEqual('Active', somchaiContract.Status);
+    Assert.areEqual('Active', somchaiContract.Status__c);
     Assert.areEqual(
       'Premium (1,500 THB)',
       somchaiContract.Subscription_Plan__c
     );
     Assert.areEqual('sub_demo_12345', somchaiContract.Stripe_Sub_ID__c);
-    Assert.areEqual('Active', somchaiContract.Account.Customer_Status__c);
+    Assert.areEqual('Active', somchaiContract.Account__r.Customer_Status__c);
     Assert.areEqual(
       2,
       [
@@ -108,6 +118,16 @@ private class DemoResetActionTest {
         WHERE Account__r.Name = 'Somchai Sukhumvit'
       ]
     );
+    Assets__c purifier = [
+      SELECT Next_Filter_Replacement__c, Last_Filter_Reminder__c
+      FROM Assets__c
+      WHERE Account__r.Name = 'Somchai Sukhumvit'
+    ];
+    Assert.areEqual(
+      Date.today().addDays(14),
+      purifier.Next_Filter_Replacement__c
+    );
+    Assert.isNull(purifier.Last_Filter_Reminder__c);
 
     List<LINE_Message__c> mengMessages = [
       SELECT Message_Body__c
@@ -127,7 +147,8 @@ private class DemoResetActionTest {
 
     Assert.areEqual(
       'Active',
-      [SELECT Status FROM Contract WHERE Account.Name = 'Meng'].Status
+      [SELECT Status__c FROM Contracts__c WHERE Account__r.Name = 'Meng']
+      .Status__c
     );
 
     // Linked to LINE but no active contract: back to Prospect, chat trimmed.
@@ -173,14 +194,70 @@ private class DemoResetActionTest {
       [
         SELECT COUNT()
         FROM Payment_History__c
-        WHERE Contract__r.Account.Name = 'Somchai Sukhumvit'
+        WHERE Contract__r.Account__r.Name = 'Somchai Sukhumvit'
+      ]
+    );
+    Assert.areEqual(
+      1,
+      [
+        SELECT COUNT()
+        FROM Contracts__c
+        WHERE Account__r.Name = 'Somchai Sukhumvit'
+      ]
+    );
+    Assert.areEqual(
+      1,
+      [
+        SELECT COUNT()
+        FROM Assets__c
+        WHERE Account__r.Name = 'Somchai Sukhumvit'
       ]
     );
   }
 
+  // First run in a fresh org: Somchai's contract and purifier are created.
+  @IsTest
+  static void createsSomchaisContractAndPurifierWhenMissing() {
+    delete [
+      SELECT Id
+      FROM Contracts__c
+      WHERE Account__r.Name = 'Somchai Sukhumvit'
+    ];
+    delete [
+      SELECT Id
+      FROM Assets__c
+      WHERE Account__r.Name = 'Somchai Sukhumvit'
+    ];
+
+    Test.startTest();
+    DemoResetAction.reset();
+    Test.stopTest();
+
+    Contracts__c c = [
+      SELECT Status__c, Stripe_Sub_ID__c, Subscription_Plan__c
+      FROM Contracts__c
+      WHERE Account__r.Name = 'Somchai Sukhumvit'
+    ];
+    Assert.areEqual('Active', c.Status__c);
+    Assert.areEqual('sub_demo_12345', c.Stripe_Sub_ID__c);
+    Assert.areEqual('Premium (1,500 THB)', c.Subscription_Plan__c);
+    Assets__c a = [
+      SELECT Name, Serial_Number__c, Next_Filter_Replacement__c
+      FROM Assets__c
+      WHERE Account__r.Name = 'Somchai Sukhumvit'
+    ];
+    Assert.areEqual('NORITZ Pure Water X1', a.Name);
+    Assert.areEqual('NZ-2026-9981', a.Serial_Number__c);
+    Assert.areEqual(Date.today().addDays(14), a.Next_Filter_Replacement__c);
+  }
+
   @IsTest
   static void explainsWhenSomchaiIsMissing() {
-    delete [SELECT Id FROM Contract WHERE Account.Name = 'Somchai Sukhumvit'];
+    delete [
+      SELECT Id
+      FROM Contracts__c
+      WHERE Account__r.Name = 'Somchai Sukhumvit'
+    ];
     delete [SELECT Id FROM Account WHERE Name = 'Somchai Sukhumvit'];
 
     try {

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Contract__c</fullName>
+    <description
+  >The subscription contract (Contracts__c) this payment belongs to. Replaces the old master-detail to standard Contract.</description>
+    <label>Contract</label>
+    <referenceTo>Contracts__c</referenceTo>
+    <relationshipLabel>Payment History</relationshipLabel>
+    <relationshipName>Payment_History</relationshipName>
+    <relationshipOrder>0</relationshipOrder>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <trackTrending>false</trackTrending>
+    <type>MasterDetail</type>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

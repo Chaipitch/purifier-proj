@@ -1,6 +1,6 @@
 // Maintenance: reminds customers on LINE that their purifier filter is due for replacement.
 // Flows call send() (the daily Filter Reminder flow); the "Send Filter Reminder" button on an
-// Asset calls sendNow() for one asset.
+// asset (Assets__c) calls sendNow() for one asset.
 public with sharing class SendFilterReminderAction {
   private static final List<String> MONTHS = new List<String>{
     'Jan',
@@ -73,33 +73,33 @@ public with sharing class SendFilterReminderAction {
   // follow DML in the same transaction.
   private static List<LINE_Message__c> remind(Set<Id> assetIds) {
     List<LINE_Message__c> messages = new List<LINE_Message__c>();
-    List<Asset> reminded = new List<Asset>();
-    for (Asset a : [
+    List<Assets__c> reminded = new List<Assets__c>();
+    for (Assets__c a : [
       SELECT
         Id,
         Name,
-        SerialNumber,
+        Serial_Number__c,
         Next_Filter_Replacement__c,
-        AccountId,
-        Account.FirstName,
-        Account.LastName,
-        Account.LINE_User_ID__c
-      FROM Asset
+        Account__c,
+        Account__r.FirstName,
+        Account__r.LastName,
+        Account__r.LINE_User_ID__c
+      FROM Assets__c
       WHERE
         Id IN :assetIds
-        AND AccountId != NULL
+        AND Account__c != NULL
         AND Next_Filter_Replacement__c != NULL
     ]) {
       messages.add(
         LineMessagingService.outbound(
-          a.AccountId,
-          a.Account.LINE_User_ID__c,
+          a.Account__c,
+          a.Account__r.LINE_User_ID__c,
           reminderText(a),
           'Filter Reminder'
         )
       );
       reminded.add(
-        new Asset(Id = a.Id, Last_Filter_Reminder__c = Date.today())
+        new Assets__c(Id = a.Id, Last_Filter_Reminder__c = Date.today())
       );
     }
     if (messages.isEmpty()) {
@@ -111,13 +111,13 @@ public with sharing class SendFilterReminderAction {
   }
 
   @TestVisible
-  private static String reminderText(Asset a) {
-    String product = String.isBlank(a.SerialNumber)
+  private static String reminderText(Assets__c a) {
+    String product = String.isBlank(a.Serial_Number__c)
       ? a.Name
-      : a.Name + ' (' + a.SerialNumber + ')';
+      : a.Name + ' (' + a.Serial_Number__c + ')';
     return LineMessagingService.addressAs(
-        a.Account.FirstName,
-        a.Account.LastName
+        a.Account__r.FirstName,
+        a.Account__r.LastName
       ) +
       'The filter on your ' +
       product +

@@ -4,6 +4,31 @@ Newest first. Each entry lists what changed for the people using the demo, then 
 
 ---
 
+## 2026-10-02 — Contracts and assets move to custom objects
+
+### What's different for users
+
+- **Contracts and assets are now the consultant's custom objects**, `Contracts__c` and `Assets__c`. The demo buttons moved with them: Send Stripe Checkout Link, Simulate Payment Failure, Simulate Payment Success and Reset Demo are on the custom contract; Send Filter Reminder is on the custom asset.
+- **The contract page has a Status path**: Pending Payment → Active → Payment Failed.
+- **Reset Demo sets Somchai up from scratch.** It creates his Premium contract and NORITZ Pure Water X1 if they're missing, and resets the filter date to 14 days from today on every run.
+- **A converted customer's contract keeps a link to the lead** it came from.
+
+### Metadata
+
+| Area            | Added / changed                                                                                                                                                                                                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fields          | `Payment_History__c.Contract__c` now a master-detail to `Contracts__c` (the old field is deleted in the org first); `Assets__c.Last_Filter_Reminder__c`                                                                                                                                      |
+| Apex            | `DemoResetAction`, `LeadConversionService`, `CustomerHistoryController`, `SendCheckoutLinkAction`, `SimulatePaymentFailureAction`, `SimulatePaymentSuccessAction`, `SendPaymentRetryAction`, `SendPaymentSuccessAction`, `SendFilterReminderAction` and their tests                          |
+| Flows           | `Payment_Failure_Recovery`, `Payment_Success_Recovery` (update `Contracts__c.Status__c`), `Filter_Reminder_Daily` (runs on `Assets__c`)                                                                                                                                                      |
+| Actions         | `Contract.*` → `Contracts__c.*`, `Asset.Send_Filter_Reminder` → `Assets__c.Send_Filter_Reminder`                                                                                                                                                                                             |
+| Pages & layouts | New `NORITZ_Contract_Record_Page` (actions, path) and `NORITZ_Asset_Record_Page`; new path `Contract_Status_Path`; standard Assets and Contracts related lists removed from the Account and Lead pages; Lead layout related lists re-pointed; demo buttons removed from the standard layouts |
+| LWC             | `noritzCustomerHistory` (custom-object field names and links)                                                                                                                                                                                                                                |
+| Permission sets | `LINE_Chat_User`: access to `Contracts__c`, `Assets__c` and their fields                                                                                                                                                                                                                     |
+
+Not yet deployed or compiled against the org. Follow [MIGRATION_CUSTOM_OBJECTS.md](MIGRATION_CUSTOM_OBJECTS.md).
+
+---
+
 ## 2026-10-01 — Round 2: LINE leads, conversion, templates, maintenance, history
 
 ### What's different for users
