@@ -30,6 +30,7 @@
     </types>
     <types>
         <members>Filter_Reminder_Daily</members>
+        <members>Lead_Update_highlight_panel</members>
         <members>Payment_Failure_Recovery</members>
         <members>Payment_Success_Recovery</members>
         <name>Flow</name>

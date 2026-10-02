@@ -12,6 +12,7 @@ Newest first. Each entry lists what changed for the people using the demo, then 
 - **The contract page has a Status path**: Pending Payment → Active → Payment Failed.
 - **Reset Demo sets Somchai up from scratch.** It creates his Premium contract and NORITZ Pure Water X1 if they're missing, and resets the filter date to 14 days from today on every run.
 - **A converted customer's contract keeps a link to the lead** it came from.
+- **A Lead's Subscription Plan is no longer wiped when it's saved.** The consultant's **[Lead] Update highlight panel** flow copied the plan (and next filter date) from the Lead's standard Contract and Asset, and wrote blank when there were none, which is always the case for an open LINE lead. It now reads `Contracts__c` and `Assets__c`, copies only when one exists, and skips Leads that are being created.
 - **Dates are always AD (2026), never Buddhist (2569).** Apex date maths goes through the new `GregorianDates` class, the components pin the Gregorian calendar, and `scripts/apex/use_gregorian_locale.apex` moves Thai-locale users to a locale whose standard pages show AD.
 
 ### Metadata

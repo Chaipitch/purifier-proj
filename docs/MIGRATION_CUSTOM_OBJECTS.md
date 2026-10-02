@@ -70,7 +70,7 @@ sf project deploy start --target-org noritz --manifest manifest/custom-objects-m
 - **It creates the two new fields:**
   - `Payment_History__c.Subscription_Contract__c` (second master-detail, relationship order 1)
   - `Assets__c.Last_Filter_Reminder__c`
-- **It updates** the classes, the three flows, the quick actions, the chat and history components, the pages, the layouts and the LINE Chat User permission set.
+- **It updates** the classes, the four flows (including the consultant's **[Lead] Update highlight panel**, which blanked the Lead's plan), the quick actions, the chat and history components, the pages, the layouts and the LINE Chat User permission set.
 - **If it fails on a field name**, the consultant's object doesn't match step 1. Fix the name with a find-and-replace across `force-app/` and run it again. The deploy is all-or-nothing, so a failure leaves the org as it was.
 - **As before, don't deploy `externalCredentials/`.**
 
