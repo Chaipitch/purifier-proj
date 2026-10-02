@@ -4,6 +4,8 @@ The consultant replaced standard **Contract** and **Asset** with two custom obje
 
 > Nothing on this branch has been deployed or compiled against the org yet. The deploy in step 4 is also the first real check.
 
+Every command is a single line, so it runs the same in PowerShell, Command Prompt and bash.
+
 ---
 
 ## Why this order
@@ -44,9 +46,7 @@ If an API name differs, a find-and-replace across `force-app/` fixes it.
 
 ```bash
 git fetch origin custom-contract-asset-objects && git checkout custom-contract-asset-objects
-sf project retrieve start --target-org noritz --output-dir ../org-copy \
-  -m "FlexiPage:Account_Record_Page" -m "FlexiPage:Lead_Record_Page" \
-  -m "Layout:Lead-Lead Layout" -m "Layout:Contract-Contract Layout" -m "Layout:Asset-Asset Layout"
+sf project retrieve start --target-org noritz --output-dir ../org-copy -m "FlexiPage:Account_Record_Page" -m "FlexiPage:Lead_Record_Page" -m "Layout:Lead-Lead Layout" -m "Layout:Contract-Contract Layout" -m "Layout:Asset-Asset Layout"
 git diff --no-index ../org-copy force-app/main/default --stat
 ```
 
@@ -57,15 +57,13 @@ Teammates edit pages and layouts in the org. If the org copy of `Account_Record_
 A new master-detail field can only be added while the object has no records, including records in the recycle bin. This deletes demo payments only; Reset Demo re-creates them in step 7.
 
 ```bash
-sf apex run --target-org noritz <<< "List<Payment_History__c> p = [SELECT Id FROM Payment_History__c]; delete p; if (!p.isEmpty()) Database.emptyRecycleBin(p);"
+sf apex run --target-org noritz --file scripts/apex/clear_payment_history.apex
 ```
 
 ## 4. Deploy everything in one go
 
 ```bash
-sf project deploy start --target-org noritz \
-  --manifest manifest/custom-objects-migration.xml \
-  --test-level NoTestRun
+sf project deploy start --target-org noritz --manifest manifest/custom-objects-migration.xml --test-level NoTestRun
 ```
 
 - **`NoTestRun` is deliberate.** The tests can't pass until the old required field is gone (step 6), and a Developer Edition org doesn't require tests on deploy. They run in step 6.
