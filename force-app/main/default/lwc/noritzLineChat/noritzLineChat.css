@@ -33,7 +33,7 @@
   height: 480px;
   overflow-y: auto;
   padding: var(--slds-g-spacing-3, 0.75rem) var(--slds-g-spacing-4, 1rem);
-  background: linear-gradient(180deg, #bde6ff, #e7f6ff);
+  background: linear-gradient(180deg, #bae5ff, #e7f6ff);
 }
 
 .chat__status {

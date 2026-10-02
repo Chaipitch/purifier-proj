@@ -5,6 +5,7 @@
   >Plan the lead chose. Copied to the contract when the first payment converts the lead.</description>
     <label>Subscription Plan</label>
     <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
     <type>Picklist</type>
     <valueSet>
         <restricted>true</restricted>

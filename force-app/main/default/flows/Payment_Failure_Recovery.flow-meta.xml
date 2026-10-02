@@ -3,8 +3,8 @@
     <actionCalls>
         <name>Send_Retry_Link_on_LINE</name>
         <label>Send Retry Link on LINE</label>
-        <locationX>176</locationX>
-        <locationY>539</locationY>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
         <actionName>SendPaymentRetryAction</actionName>
         <actionType>apex</actionType>
         <flowTransactionModel>CurrentTransaction</flowTransactionModel>
@@ -15,9 +15,10 @@
         >$Record.Subscription_Contract__c</elementReference>
             </value>
         </inputParameters>
-        <storeOutputAutomatically>false</storeOutputAutomatically>
+        <nameSegment>SendPaymentRetryAction</nameSegment>
     </actionCalls>
     <apiVersion>67.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
     <description
   >When a payment fails: mark the contract Payment Failed, suspend the customer, refresh open screens, and send the customer a payment retry link on LINE.</description>
     <environments>Default</environments>
@@ -40,8 +41,8 @@
     <recordCreates>
         <name>Refresh_Open_Screens</name>
         <label>Refresh Open Screens</label>
-        <locationX>176</locationX>
-        <locationY>431</locationY>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
         <connector>
             <targetReference>Send_Retry_Link_on_LINE</targetReference>
         </connector>
@@ -58,8 +59,8 @@
     <recordUpdates>
         <name>Mark_Contract_Payment_Failed</name>
         <label>Mark Contract Payment Failed</label>
-        <locationX>176</locationX>
-        <locationY>215</locationY>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
         <connector>
             <targetReference>Suspend_Customer</targetReference>
         </connector>
@@ -83,8 +84,8 @@
     <recordUpdates>
         <name>Suspend_Customer</name>
         <label>Suspend Customer</label>
-        <locationX>176</locationX>
-        <locationY>323</locationY>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
         <connector>
             <targetReference>Refresh_Open_Screens</targetReference>
         </connector>
@@ -106,7 +107,7 @@
         <object>Account</object>
     </recordUpdates>
     <start>
-        <locationX>50</locationX>
+        <locationX>0</locationX>
         <locationY>0</locationY>
         <connector>
             <targetReference>Mark_Contract_Payment_Failed</targetReference>

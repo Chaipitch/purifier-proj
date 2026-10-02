@@ -9,5 +9,6 @@
     <relationshipLabel>LINE Messages</relationshipLabel>
     <relationshipName>LINE_Messages</relationshipName>
     <required>false</required>
+    <trackTrending>false</trackTrending>
     <type>Lookup</type>
 </CustomField>

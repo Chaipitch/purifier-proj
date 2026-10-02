@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Everything the NORITZ demo uses. Retrieve with:
+     sf project retrieve start -x manifest/noritz-demo.xml -o noritz -->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>*</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>ApexTrigger</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>LightningComponentBundle</name>
+    </types>
+    <types>
+        <members>Contracts__c</members>
+        <members>Assets__c</members>
+        <members>Phone_Call__c</members>
+        <members>Payment_History__c</members>
+        <members>LINE_Message__c</members>
+        <members>LINE_Chat_Refresh__e</members>
+        <members>LINE_Settings__c</members>
+        <members>LINE_Chat_Template__mdt</members>
+        <name>CustomObject</name>
+    </types>
+    <types>
+        <members>Account.Converted_From_LINE_Lead__c</members>
+        <members>Asset.Last_Filter_Reminder__c</members>
+        <members>Asset.Lead__c</members>
+        <members>Contract.Lead__c</members>
+        <members>Lead.LINE_User_ID__c</members>
+        <members>Lead.Next_Filter_Date__c</members>
+        <members>Lead.Stripe_Sub_ID__c</members>
+        <members>Lead.Subscription_Plan__c</members>
+        <name>CustomField</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>CustomMetadata</name>
+    </types>
+    <types>
+        <members>Contracts__c</members>
+        <members>Assets__c</members>
+        <members>Phone_Call__c</members>
+        <name>CustomTab</name>
+    </types>
+    <types>
+        <members>Account_Record_Page</members>
+        <members>Case_Record_Page</members>
+        <members>LINE_Message_Record_Page</members>
+        <members>Lead_Record_Page</members>
+        <members>NORITZ_Asset_Record_Page</members>
+        <members>NORITZ_Contract_Record_Page</members>
+        <name>FlexiPage</name>
+    </types>
+    <types>
+        <members>Account_Update_highlight_panel</members>
+        <members>Filter_Reminder_Daily</members>
+        <members>Lead_Update_highlight_panel</members>
+        <members>Payment_Failure_Recovery</members>
+        <members>Payment_Success_Recovery</members>
+        <members>Phone_Update_owner_when_create_new_phone_record</members>
+        <name>Flow</name>
+    </types>
+    <types>
+        <members>Account-Account Layout</members>
+        <members>Asset-Asset Layout</members>
+        <members>Assets__c-Assets Layout</members>
+        <members>Contract-Contract Layout</members>
+        <members>Contracts__c-Contracts Layout</members>
+        <members>Lead-Lead Layout</members>
+        <members>PersonAccount-Person Account Layout</members>
+        <members>Phone_Call__c-Phone Call Layout</members>
+        <name>Layout</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>PathAssistant</name>
+    </types>
+    <types>
+        <members>LINE_Chat_User</members>
+        <members>LINE_Webhook_Guest</members>
+        <name>PermissionSet</name>
+    </types>
+    <types>
+        <members>Assets__c.Send_Filter_Reminder</members>
+        <members>Contracts__c.Reset_Demo</members>
+        <members>Contracts__c.Send_Checkout_Link</members>
+        <members>Contracts__c.Simulate_Payment_Failure</members>
+        <members>Contracts__c.Simulate_Payment_Success</members>
+        <members>Lead.Send_Checkout_Link</members>
+        <members>Lead.Simulate_Payment_Success</members>
+        <name>QuickAction</name>
+    </types>
+    <types>
+        <members>ContractStatus</members>
+        <members>LeadSource</members>
+        <name>StandardValueSet</name>
+    </types>
+    <version>67.0</version>
+</Package>

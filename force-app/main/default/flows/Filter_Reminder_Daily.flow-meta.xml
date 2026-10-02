@@ -3,8 +3,8 @@
     <actionCalls>
         <name>Send_Filter_Reminder_on_LINE</name>
         <label>Send Filter Reminder on LINE</label>
-        <locationX>50</locationX>
-        <locationY>360</locationY>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
         <actionName>SendFilterReminderAction</actionName>
         <actionType>apex</actionType>
         <flowTransactionModel>CurrentTransaction</flowTransactionModel>
@@ -14,14 +14,16 @@
                 <elementReference>$Record.Id</elementReference>
             </value>
         </inputParameters>
-        <storeOutputAutomatically>false</storeOutputAutomatically>
+        <nameSegment>SendFilterReminderAction</nameSegment>
+        <offset>0</offset>
     </actionCalls>
     <apiVersion>67.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
     <decisions>
         <name>Due_in_7_Days</name>
         <label>Due in 7 Days?</label>
-        <locationX>182</locationX>
-        <locationY>252</locationY>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
         <defaultConnectorLabel>Not yet</defaultConnectorLabel>
         <rules>
             <name>Due</name>
@@ -34,7 +36,7 @@
                 </rightValue>
             </conditions>
             <connector>
-                <targetReference>Send_Filter_Reminder_on_LINE</targetReference>
+                <targetReference>Create_Task_remainder</targetReference>
             </connector>
             <label>Due</label>
         </rules>
@@ -46,7 +48,7 @@
         <name>NeedsReminder</name>
         <dataType>Boolean</dataType>
         <expression
-    >{!$Record.Next_Filter_Replacement__c} = TODAY() + 7 &amp;&amp; NOT(ISBLANK({!$Record.Account__c})) &amp;&amp; (ISBLANK({!$Record.Last_Filter_Reminder__c}) || {!$Record.Last_Filter_Reminder__c} &lt; TODAY() - 30)</expression>
+    >{!$Record.Next_Filter_Replacement__c} = TODAY() + 1 &amp;&amp; NOT(ISBLANK({!$Record.Account__c})) &amp;&amp; (ISBLANK({!$Record.Last_Filter_Reminder__c}) || {!$Record.Last_Filter_Reminder__c} &lt; TODAY() - 30)</expression>
     </formulas>
     <interviewLabel
   >Filter Reminder Daily {!$Flow.CurrentDateTime}</interviewLabel>
@@ -64,8 +66,50 @@
         </value>
     </processMetadataValues>
     <processType>AutoLaunchedFlow</processType>
+    <recordCreates>
+        <name>Create_Task_remainder</name>
+        <label>Create Task remainder</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Send_Filter_Reminder_on_LINE</targetReference>
+        </connector>
+        <inputAssignments>
+            <field>ActivityDate</field>
+            <value>
+                <elementReference
+        >$Record.Next_Filter_Replacement__c</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Priority</field>
+            <value>
+                <stringValue>Normal</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status</field>
+            <value>
+                <stringValue>Not Started</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Subject</field>
+            <value>
+                <stringValue>Filter Replacement Follow-up</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>WhatId</field>
+            <value>
+                <elementReference>$Record.Account__c</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Task</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordCreates>
     <start>
-        <locationX>56</locationX>
+        <locationX>0</locationX>
         <locationY>0</locationY>
         <connector>
             <targetReference>Due_in_7_Days</targetReference>
@@ -80,7 +124,9 @@
         </filters>
         <object>Assets__c</object>
         <schedule>
+            <dayOfMonthToRun>0</dayOfMonthToRun>
             <frequency>Daily</frequency>
+            <frequencyNumber>0</frequencyNumber>
             <startDate>2026-10-02</startDate>
             <startTime>02:00:00.000Z</startTime>
         </schedule>

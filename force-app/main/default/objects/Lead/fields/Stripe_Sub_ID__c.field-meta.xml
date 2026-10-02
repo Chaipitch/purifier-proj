@@ -3,9 +3,11 @@
     <fullName>Stripe_Sub_ID__c</fullName>
     <description
   >Mock subscription id, set when the checkout link is sent. Copied to the contract on conversion.</description>
+    <externalId>false</externalId>
     <label>Stripe Sub ID</label>
     <length>64</length>
     <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
     <type>Text</type>
     <unique>false</unique>
 </CustomField>

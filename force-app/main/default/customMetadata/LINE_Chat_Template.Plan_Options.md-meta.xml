@@ -19,6 +19,6 @@ Both include free filter replacements and maintenance. Which plan would you like
     </values>
     <values>
         <field>Sort_Order__c</field>
-        <value xsi:type="xsd:double">2</value>
+        <value xsi:type="xsd:double">2.0</value>
     </values>
 </CustomMetadata>

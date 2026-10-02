@@ -5,5 +5,6 @@
     <description
   >Set when a LINE lead converted on its first payment. Reset Demo turns these back into leads.</description>
     <label>Converted From LINE Lead</label>
+    <trackFeedHistory>false</trackFeedHistory>
     <type>Checkbox</type>
 </CustomField>

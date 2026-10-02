@@ -82,7 +82,7 @@
     </decisions>
     <decisions>
         <description
-    >A Lead being created has no id yet, so it can't have a contract or asset. Looking them up with a blank id could match records that aren't linked to any lead.</description>
+    >A Lead being created has no id yet, so it can&apos;t have a contract or asset. Looking them up with a blank id could match records that aren&apos;t linked to any lead.</description>
         <name>Existing_Lead</name>
         <label>Existing Lead?</label>
         <locationX>0</locationX>
@@ -105,7 +105,7 @@
         </rules>
     </decisions>
     <description
-  >Shows the plan of the lead's contract and the next filter date of its asset on the Lead. Copies a value only when a contract or asset exists, so a plan the agent picked before checkout is kept.</description>
+  >Shows the plan of the lead&apos;s contract and the next filter date of its asset on the Lead. Copies a value only when a contract or asset exists, so a plan the agent picked before checkout is kept.</description>
     <environments>Default</environments>
     <interviewLabel
   >[Lead] Update highlight panel {!$Flow.CurrentDateTime}</interviewLabel>

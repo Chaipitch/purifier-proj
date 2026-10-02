@@ -3,9 +3,11 @@
     <fullName>Delivery_Error__c</fullName>
     <description
   >Why a push to LINE failed, as returned by LINE or the callout.</description>
+    <externalId>false</externalId>
     <label>Delivery Error</label>
     <length>255</length>
     <required>false</required>
+    <trackTrending>false</trackTrending>
     <type>Text</type>
     <unique>false</unique>
 </CustomField>
