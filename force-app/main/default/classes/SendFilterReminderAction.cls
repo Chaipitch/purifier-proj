@@ -2,21 +2,6 @@
 // Flows call send() (the daily Filter Reminder flow); the "Send Filter Reminder" button on an
 // asset (Assets__c) calls sendNow() for one asset.
 public with sharing class SendFilterReminderAction {
-  private static final List<String> MONTHS = new List<String>{
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec'
-  };
-
   public class Result {
     @AuraEnabled
     public String status; // Sent, Failed, Not linked or Error
@@ -122,18 +107,7 @@ public with sharing class SendFilterReminderAction {
       'The filter on your ' +
       product +
       ' is due for replacement on ' +
-      formatDate(a.Next_Filter_Replacement__c) +
+      GregorianDates.format(a.Next_Filter_Replacement__c) +
       '. Reply here to book a technician visit.';
-  }
-
-  // "7 Oct 2026" whatever the user's locale. Not d.year(): for a th_TH user it returns the
-  // Buddhist year (2569). String.valueOf gives ISO yyyy-MM-dd in the Gregorian calendar.
-  private static String formatDate(Date d) {
-    List<String> parts = String.valueOf(d).split('-');
-    return Integer.valueOf(parts[2]) +
-      ' ' +
-      MONTHS[Integer.valueOf(parts[1]) - 1] +
-      ' ' +
-      parts[0];
   }
 }

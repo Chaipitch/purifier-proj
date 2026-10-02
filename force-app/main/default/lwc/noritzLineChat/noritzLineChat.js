@@ -14,7 +14,9 @@ const URL_PATTERN = /https:\/\/\S+/;
 const INPUT_MAX_HEIGHT_PX = 144;
 const LINK_TYPES = new Set(["Checkout Link", "Payment Retry"]);
 
+// Always the Gregorian calendar (AD years), even for users with the Thai locale.
 const timeFormat = new Intl.DateTimeFormat("en-GB", {
+  calendar: "gregory",
   day: "2-digit",
   month: "short",
   year: "numeric",

@@ -12,6 +12,8 @@
         <members>CustomerHistoryControllerTest</members>
         <members>DemoResetAction</members>
         <members>DemoResetActionTest</members>
+        <members>GregorianDates</members>
+        <members>GregorianDatesTest</members>
         <members>LeadConversionService</members>
         <members>LeadConversionServiceTest</members>
         <members>SendCheckoutLinkAction</members>
@@ -42,6 +44,7 @@
     </types>
     <types>
         <members>noritzCustomerHistory</members>
+        <members>noritzLineChat</members>
         <name>LightningComponentBundle</name>
     </types>
     <types>

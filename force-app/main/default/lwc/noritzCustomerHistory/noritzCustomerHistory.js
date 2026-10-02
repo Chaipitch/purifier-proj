@@ -7,13 +7,16 @@ const CHANNEL = "/event/LINE_Chat_Refresh__e";
 const FALLBACK_POLL_SECONDS = 5;
 
 // Date-only fields come back as yyyy-MM-dd; format them in UTC so they don't shift a day.
+// Always the Gregorian calendar (AD years), even for users with the Thai locale.
 const dateFormat = new Intl.DateTimeFormat("en-GB", {
+  calendar: "gregory",
   day: "numeric",
   month: "short",
   year: "numeric",
   timeZone: "UTC"
 });
 const dateTimeFormat = new Intl.DateTimeFormat("en-GB", {
+  calendar: "gregory",
   day: "numeric",
   month: "short",
   year: "numeric",

@@ -103,7 +103,10 @@ sf project deploy start --source-dir force-app/main/default/<path> --target-org 
 
 ## 7. Gotchas
 
-- **Thai locale:** for a th_TH user, `Date.year()` returns the Buddhist year (2569), and `Date.newInstance(2026, …)` and `toStartOfMonth()` save the wrong year. Use `addDays`, `Date.valueOf('yyyy-MM-dd')` and `String.valueOf(date)`.
+- **Thai locale and AD years:**
+  - Standard Salesforce pages show Buddhist years (2569) to users whose **Locale** is Thai (th_TH). `scripts/apex/use_gregorian_locale.apex` moves them to English (United Kingdom), which keeps AD years; their language is unchanged. Set Setup → Company Information → **Locale** the same way so new users get it.
+  - In Apex, for a th_TH user, `Date.year()` returns 2569, and `Date.newInstance(2026, …)` and `toStartOfMonth()` save the wrong year. Use `GregorianDates` (`startOfMonth`, `addMonths`, `format`), `addDays`, `Date.valueOf('yyyy-MM-dd')` and `String.valueOf(date)`.
+  - The LWCs format dates with `en-GB` and `calendar: "gregory"`, so they always show AD.
 - **Contracts and assets are custom objects** (`Contracts__c`, `Assets__c`), not standard Contract and Asset. Their status moves freely, and an asset can belong to a Lead only. See [MIGRATION_CUSTOM_OBJECTS.md](MIGRATION_CUSTOM_OBJECTS.md).
 - **A conversion can't be undone,** so the reset archives converted customers and creates a fresh Lead in their place.
 - **Seeding payments in Apex fires flows.** A successful payment fires the Payment Success flow, which messages the customer. Set `SendPaymentSuccessAction.suppress = true` while seeding (the reset does).

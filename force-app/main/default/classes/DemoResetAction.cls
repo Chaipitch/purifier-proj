@@ -137,16 +137,15 @@ public with sharing class DemoResetAction {
     }
     delete [SELECT Id FROM LINE_Message__c WHERE Account__c = :somchai.Id];
 
-    Date startDate = today.addMonths(-3);
+    Date startDate = GregorianDates.addMonths(today, -3);
     contract.Account__c = somchai.Id;
     contract.Status__c = 'Active';
     contract.Subscription_Plan__c = 'Premium (1,500 THB)';
     contract.Stripe_Sub_ID__c = SOMCHAI_SUB_ID;
     contract.Contract_Start_Date__c = startDate;
     contract.Contract_Term_months__c = 12;
-    contract.Contract_End_Date__c = startDate.addMonths(12);
-    // Not toStartOfMonth(): for a th_TH user it rebuilds the date from the Buddhist year and saves 2569.
-    contract.Next_Billing_Date__c = today.addDays(1 - today.day());
+    contract.Contract_End_Date__c = GregorianDates.addMonths(startDate, 12);
+    contract.Next_Billing_Date__c = GregorianDates.startOfMonth(today);
     upsert contract;
 
     List<Assets__c> assets = [

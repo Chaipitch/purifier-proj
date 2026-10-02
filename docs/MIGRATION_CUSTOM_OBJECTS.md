@@ -105,11 +105,12 @@ Setup → Flows → each flow → **View Details and Versions** → delete every
    sf apex run --target-org noritz --file scripts/apex/reset_demo.apex
    ```
    This creates Somchai's Premium contract (`sub_demo_12345`) and his NORITZ Pure Water X1 (`NZ-2026-9981`, filter due in 14 days). After that, the button on his contract restores them on every run.
-4. **Smoke test.** Open Somchai's contract, then:
+4. **AD years everywhere.** Run `sf apex run --target-org noritz --file scripts/apex/use_gregorian_locale.apex` and set Setup → Company Information → **Locale** to English (United Kingdom). Thai-locale users otherwise see Buddhist years (2569) on standard pages.
+5. **Smoke test.** Open Somchai's contract, then:
    - **Send Stripe Checkout Link** → the link appears in the chat
    - **Simulate Payment Failure** → contract Payment Failed, customer Payment Suspended, retry message in the chat, a bold red payment on the history card
    - **Reset Demo**.
-5. **Optional extras:**
+6. **Optional extras:**
    - Add related lists for the new objects on the Account and Lead pages. The old Assets and Contracts lists were removed because the Customer History card already shows products, contracts and payments.
    - Delete the old quick actions `Contract.Send_Checkout_Link`, `Contract.Simulate_Payment_Failure`, `Contract.Simulate_Payment_Success`, `Contract.Reset_Demo` and `Asset.Send_Filter_Reminder`. They're no longer on any layout, and they'd fail if clicked.
 

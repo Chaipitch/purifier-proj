@@ -51,11 +51,12 @@ public with sharing class LeadConversionService {
       Status__c = 'Pending Payment',
       Contract_Start_Date__c = today,
       Contract_Term_months__c = 12,
-      Contract_End_Date__c = today.addMonths(12),
+      Contract_End_Date__c = GregorianDates.addMonths(today, 12),
       Subscription_Plan__c = l.Subscription_Plan__c,
       Stripe_Sub_ID__c = l.Stripe_Sub_ID__c,
-      // Not toStartOfMonth(): for a th_TH user it saves the Buddhist year.
-      Next_Billing_Date__c = today.addMonths(1).addDays(1 - today.day())
+      Next_Billing_Date__c = GregorianDates.startOfMonth(
+        GregorianDates.addMonths(today, 1)
+      )
     );
     insert contract;
 
