@@ -48,10 +48,6 @@
         <name>LightningComponentBundle</name>
     </types>
     <types>
-        <members>Contract_Status_Path</members>
-        <name>PathAssistant</name>
-    </types>
-    <types>
         <members>Account_Record_Page</members>
         <members>Lead_Record_Page</members>
         <members>NORITZ_Asset_Record_Page</members>

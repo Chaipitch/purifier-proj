@@ -72,7 +72,7 @@ sf project deploy start --target-org noritz \
 - **It creates the two new fields:**
   - `Payment_History__c.Subscription_Contract__c` (second master-detail, relationship order 1)
   - `Assets__c.Last_Filter_Reminder__c`
-- **It updates** the classes, the three flows, the quick actions, the history card, the Status path, the pages, the layouts and the LINE Chat User permission set.
+- **It updates** the classes, the three flows, the quick actions, the chat and history components, the pages, the layouts and the LINE Chat User permission set.
 - **If it fails on a field name**, the consultant's object doesn't match step 1. Fix the name with a find-and-replace across `force-app/` and run it again. The deploy is all-or-nothing, so a failure leaves the org as it was.
 - **As before, don't deploy `externalCredentials/`.**
 
@@ -97,20 +97,26 @@ Setup → Flows → each flow → **View Details and Versions** → delete every
 ## 7. Finish in Setup
 
 1. **Activate the record pages.** In App Builder, open **NORITZ Contract Record Page** and **NORITZ Asset Record Page** and click Activation → **Org Default**.
-   - The contract page has the Send Stripe Checkout Link, Simulate Payment Failure, Simulate Payment Success and Reset Demo buttons, plus the Status path.
+   - The contract page has the Send Stripe Checkout Link, Simulate Payment Failure, Simulate Payment Success and Reset Demo buttons, plus the Status path (once step 2 has created it).
    - The asset page has Send Filter Reminder.
-2. **Console navigation.** In the Service Console app, replace Contracts and Assets with the custom object tabs. If the consultant hasn't created tabs yet, create them in Setup → Tabs.
-3. **Run Reset Demo.** In a fresh org there's no custom contract yet, and so no Reset Demo button to click. Run it from the CLI:
+2. **Status path.** Setup → **Path Settings** → Enable (if it isn't already) → **New Path**:
+   - Object: **Contract** (`Contracts__c`), Record Type: Master, Picklist: **Status**
+   - Activate it.
+
+   The path isn't deployed from source: Salesforce rejected the step values, so it is created here, where Setup reads the real picklist values. To keep it in source afterwards, run `sf project retrieve start -m PathAssistant --target-org noritz`.
+
+3. **Console navigation.** In the Service Console app, replace Contracts and Assets with the custom object tabs. If the consultant hasn't created tabs yet, create them in Setup → Tabs.
+4. **Run Reset Demo.** In a fresh org there's no custom contract yet, and so no Reset Demo button to click. Run it from the CLI:
    ```bash
    sf apex run --target-org noritz --file scripts/apex/reset_demo.apex
    ```
    This creates Somchai's Premium contract (`sub_demo_12345`) and his NORITZ Pure Water X1 (`NZ-2026-9981`, filter due in 14 days). After that, the button on his contract restores them on every run.
-4. **AD years everywhere.** Run `sf apex run --target-org noritz --file scripts/apex/use_gregorian_locale.apex` and set Setup → Company Information → **Locale** to English (United Kingdom). Thai-locale users otherwise see Buddhist years (2569) on standard pages.
-5. **Smoke test.** Open Somchai's contract, then:
+5. **AD years everywhere.** Run `sf apex run --target-org noritz --file scripts/apex/use_gregorian_locale.apex` and set Setup → Company Information → **Locale** to English (United Kingdom). Thai-locale users otherwise see Buddhist years (2569) on standard pages.
+6. **Smoke test.** Open Somchai's contract, then:
    - **Send Stripe Checkout Link** → the link appears in the chat
    - **Simulate Payment Failure** → contract Payment Failed, customer Payment Suspended, retry message in the chat, a bold red payment on the history card
    - **Reset Demo**.
-6. **Optional extras:**
+7. **Optional extras:**
    - Add related lists for the new objects on the Account and Lead pages. The old Assets and Contracts lists were removed because the Customer History card already shows products, contracts and payments.
    - Delete the old quick actions `Contract.Send_Checkout_Link`, `Contract.Simulate_Payment_Failure`, `Contract.Simulate_Payment_Success`, `Contract.Reset_Demo` and `Asset.Send_Filter_Reminder`. They're no longer on any layout, and they'd fail if clicked.
 

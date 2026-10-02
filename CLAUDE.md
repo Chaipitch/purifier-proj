@@ -76,7 +76,7 @@ These were found while reviewing the spec. Build to the decision, not to the ori
 2. **Digital Engagement is not available in Developer Edition.** **Decision:** the LINE chat is a **mock LWC** backed by a custom `LINE_Message__c` object. Create that object if it doesn't exist (§3, Task 2). A real LINE Messaging API push is an optional stretch goal only — do not start it until Tasks 1–9 are done and green.
 3. **The Apex sample in the spec is broken.** It inserts a `Payment_History__c` without its contract (now `Subscription_Contract__c`), which fails because the field is a required Master-Detail. The rewritten handler must resolve the Contract via `Stripe_Sub_ID__c` from the payload.
 4. **Styling limits.** Standard highlights panels can't render coloured badges, and standard related lists can't render bold red rows. Both the header and the payment card must be custom LWCs.
-5. **Path field.** The spec's wireframe Path (Lead → Pending → Active → Renewal) matches no field in the data model. **Decision:** the Path runs on `Contracts__c.Status__c` with the three values above (`pathAssistants/Contract_Status_Path`).
+5. **Path field.** The spec's wireframe Path (Lead → Pending → Active → Renewal) matches no field in the data model. **Decision:** the Path runs on `Contracts__c.Status__c` with the three values above. It is created in Setup → Path Settings (deploying it from source was rejected on the picklist values).
 6. **"Stripe Hosted Checkout (Krungsri Payment Gateway)"** names two different providers. For the demo, everything Stripe-side is mocked, so this doesn't block the build. It is an open question for the client, not for you.
 
 ---
