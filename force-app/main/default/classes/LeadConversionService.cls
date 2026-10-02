@@ -63,7 +63,7 @@ public with sharing class LeadConversionService {
 
     // The Payment Success flow activates the contract and thanks the customer on LINE.
     insert new Payment_History__c(
-      Contract__c = contract.Id,
+      Subscription_Contract__c = contract.Id,
       Account__c = accountId,
       Lead__c = l.Id,
       Amount__c = SubscriptionPlans.priceOf(l.Subscription_Plan__c),

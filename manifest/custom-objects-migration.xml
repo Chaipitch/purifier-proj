@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!-- Everything the custom Contracts__c / Assets__c switch deploys, in one go.
+     See docs/MIGRATION_CUSTOM_OBJECTS.md for the order of the org-side steps around it. -->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>Assets__c.Last_Filter_Reminder__c</members>
+        <members>Payment_History__c.Subscription_Contract__c</members>
+        <name>CustomField</name>
+    </types>
+    <types>
+        <members>CustomerHistoryController</members>
+        <members>CustomerHistoryControllerTest</members>
+        <members>DemoResetAction</members>
+        <members>DemoResetActionTest</members>
+        <members>LeadConversionService</members>
+        <members>LeadConversionServiceTest</members>
+        <members>SendCheckoutLinkAction</members>
+        <members>SendCheckoutLinkActionTest</members>
+        <members>SendFilterReminderAction</members>
+        <members>SendFilterReminderActionTest</members>
+        <members>SendPaymentRetryAction</members>
+        <members>SendPaymentSuccessAction</members>
+        <members>SimulatePaymentFailureAction</members>
+        <members>SimulatePaymentFailureActionTest</members>
+        <members>SimulatePaymentSuccessAction</members>
+        <members>SimulatePaymentSuccessActionTest</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>Filter_Reminder_Daily</members>
+        <members>Payment_Failure_Recovery</members>
+        <members>Payment_Success_Recovery</members>
+        <name>Flow</name>
+    </types>
+    <types>
+        <members>Assets__c.Send_Filter_Reminder</members>
+        <members>Contracts__c.Reset_Demo</members>
+        <members>Contracts__c.Send_Checkout_Link</members>
+        <members>Contracts__c.Simulate_Payment_Failure</members>
+        <members>Contracts__c.Simulate_Payment_Success</members>
+        <name>QuickAction</name>
+    </types>
+    <types>
+        <members>noritzCustomerHistory</members>
+        <name>LightningComponentBundle</name>
+    </types>
+    <types>
+        <members>Contract_Status_Path</members>
+        <name>PathAssistant</name>
+    </types>
+    <types>
+        <members>Account_Record_Page</members>
+        <members>Lead_Record_Page</members>
+        <members>NORITZ_Asset_Record_Page</members>
+        <members>NORITZ_Contract_Record_Page</members>
+        <name>FlexiPage</name>
+    </types>
+    <types>
+        <members>Asset-Asset Layout</members>
+        <members>Contract-Contract Layout</members>
+        <members>Lead-Lead Layout</members>
+        <name>Layout</name>
+    </types>
+    <types>
+        <members>LINE_Chat_User</members>
+        <name>PermissionSet</name>
+    </types>
+    <version>67.0</version>
+</Package>

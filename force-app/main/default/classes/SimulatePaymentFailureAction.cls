@@ -12,7 +12,7 @@ public with sharing class SimulatePaymentFailureAction {
       WHERE Id = :contractId
     ];
     insert new Payment_History__c(
-      Contract__c = c.Id,
+      Subscription_Contract__c = c.Id,
       Account__c = c.Account__c,
       Amount__c = SubscriptionPlans.priceOf(c.Subscription_Plan__c),
       Status__c = 'Failed',

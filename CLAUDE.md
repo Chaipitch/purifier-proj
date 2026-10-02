@@ -61,7 +61,7 @@ Objects and fields are **already created in the org**. Assume this schema exists
 ### Payment_History__c
 | API Name | Type | Notes |
 |---|---|---|
-| `Contract__c` | Master-Detail | to `Contracts__c` — **required**, see §2 |
+| `Subscription_Contract__c` | Master-Detail | to `Contracts__c` — **required**, see §2. Replaces the old `Contract__c` (to standard Contract), which is deleted |
 | `Amount__c` | Currency (THB) | |
 | `Status__c` | Picklist | Success, Failed |
 | `Failure_Reason__c` | Text | e.g. Card Expired (ERR-02) |
@@ -74,7 +74,7 @@ These were found while reviewing the spec. Build to the decision, not to the ori
 
 1. **Contract Status.** *Superseded:* the custom `Contracts__c.Status__c` picklist (`Pending Payment`, `Active`, `Payment Failed`) has no status categories, so it moves freely in any direction. The standard Contract and its activation lock are no longer used.
 2. **Digital Engagement is not available in Developer Edition.** **Decision:** the LINE chat is a **mock LWC** backed by a custom `LINE_Message__c` object. Create that object if it doesn't exist (§3, Task 2). A real LINE Messaging API push is an optional stretch goal only — do not start it until Tasks 1–9 are done and green.
-3. **The Apex sample in the spec is broken.** It inserts a `Payment_History__c` without `Contract__c`, which fails because the field is a required Master-Detail. The rewritten handler must resolve the Contract via `Stripe_Sub_ID__c` from the payload.
+3. **The Apex sample in the spec is broken.** It inserts a `Payment_History__c` without its contract (now `Subscription_Contract__c`), which fails because the field is a required Master-Detail. The rewritten handler must resolve the Contract via `Stripe_Sub_ID__c` from the payload.
 4. **Styling limits.** Standard highlights panels can't render coloured badges, and standard related lists can't render bold red rows. Both the header and the payment card must be custom LWCs.
 5. **Path field.** The spec's wireframe Path (Lead → Pending → Active → Renewal) matches no field in the data model. **Decision:** the Path runs on `Contracts__c.Status__c` with the three values above (`pathAssistants/Contract_Status_Path`).
 6. **"Stripe Hosted Checkout (Krungsri Payment Gateway)"** names two different providers. For the demo, everything Stripe-side is mocked, so this doesn't block the build. It is an open question for the client, not for you.
@@ -161,7 +161,7 @@ Provide **two ways to trigger it**, because the presenter will want a choice on 
 `DemoStripeWebhookHandler` at `/services/apexrest/stripe/webhook/demo/*`:
 - Parse the body as JSON, read the subscription id and amount.
 - Resolve the Contract by `Stripe_Sub_ID__c`; return a clean JSON error if not found rather than throwing.
-- Insert `Payment_History__c` with `Contract__c` populated, `Status__c = 'Failed'`, `Failure_Reason__c` from the payload (default `Card Expired (ERR-02)`).
+- Insert `Payment_History__c` with `Subscription_Contract__c` populated, `Status__c = 'Failed'`, `Failure_Reason__c` from the payload (default `Card Expired (ERR-02)`).
 - Return `{"status":"success",...}`.
 - Include a test class with a positive case and a contract-not-found case. **Do not implement Stripe signature verification** — it's out of scope for the demo, but note in the code comments that production needs it.
 

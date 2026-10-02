@@ -11,7 +11,8 @@
         <inputParameters>
             <name>contractIds</name>
             <value>
-                <elementReference>$Record.Contract__c</elementReference>
+                <elementReference
+        >$Record.Subscription_Contract__c</elementReference>
                 <inputConfiguratorMode>Resource</inputConfiguratorMode>
             </value>
         </inputParameters>
@@ -49,7 +50,7 @@
             <field>Account_Id__c</field>
             <value>
                 <elementReference
-        >$Record.Contract__r.Account__c</elementReference>
+        >$Record.Subscription_Contract__r.Account__c</elementReference>
             </value>
         </inputAssignments>
         <object>LINE_Chat_Refresh__e</object>
@@ -69,7 +70,7 @@
             <operator>EqualTo</operator>
             <value>
                 <elementReference
-        >$Record.Contract__r.Account__c</elementReference>
+        >$Record.Subscription_Contract__r.Account__c</elementReference>
             </value>
         </filters>
         <inputAssignments>
@@ -93,7 +94,8 @@
             <field>Id</field>
             <operator>EqualTo</operator>
             <value>
-                <elementReference>$Record.Contract__c</elementReference>
+                <elementReference
+        >$Record.Subscription_Contract__c</elementReference>
             </value>
         </filters>
         <inputAssignments>

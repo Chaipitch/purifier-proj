@@ -68,11 +68,11 @@ public with sharing class CustomerHistoryController {
         Amount__c,
         Status__c,
         Failure_Reason__c,
-        Contract__r.Name
+        Subscription_Contract__r.Name
       FROM Payment_History__c
       WHERE
-        (Contract__r.Account__c != NULL
-        AND Contract__r.Account__c = :accountId)
+        (Subscription_Contract__r.Account__c != NULL
+        AND Subscription_Contract__r.Account__c = :accountId)
         OR (Lead__c != NULL
         AND Lead__c = :leadId)
       ORDER BY CreatedDate DESC, Name DESC

@@ -132,7 +132,7 @@ public with sharing class DemoResetAction {
       delete [
         SELECT Id
         FROM Payment_History__c
-        WHERE Contract__c = :contract.Id
+        WHERE Subscription_Contract__c = :contract.Id
       ];
     }
     delete [SELECT Id FROM LINE_Message__c WHERE Account__c = :somchai.Id];
@@ -215,7 +215,7 @@ public with sharing class DemoResetAction {
     delete [
       SELECT Id
       FROM Payment_History__c
-      WHERE Contract__r.Account__c IN :friendIds
+      WHERE Subscription_Contract__r.Account__c IN :friendIds
     ];
     List<LINE_Message__c> chatter = new List<LINE_Message__c>();
     for (LINE_Message__c m : [
@@ -262,7 +262,7 @@ public with sharing class DemoResetAction {
 
   private static Payment_History__c payment(Id contractId, Id accountId) {
     return new Payment_History__c(
-      Contract__c = contractId,
+      Subscription_Contract__c = contractId,
       Account__c = accountId,
       Amount__c = 1500,
       Status__c = 'Success'

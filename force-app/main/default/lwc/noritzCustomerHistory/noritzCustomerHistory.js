@@ -133,7 +133,7 @@ export default class NoritzCustomerHistory extends LightningElement {
         amount: p.Amount__c == null ? "—" : money.format(p.Amount__c),
         status: p.Status__c,
         reason: failed ? p.Failure_Reason__c : undefined,
-        contract: p.Contract__r?.Name,
+        contract: p.Subscription_Contract__r?.Name,
         rowClass: failed ? "payment payment_failed" : "payment"
       };
     });

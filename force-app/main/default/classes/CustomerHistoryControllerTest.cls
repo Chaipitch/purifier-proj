@@ -27,7 +27,7 @@ private class CustomerHistoryControllerTest {
     // Failed: the recovery flow runs and messages LINE, so give it a stand-in.
     Test.setMock(HttpCalloutMock.class, new LineCalloutMock());
     insert new Payment_History__c(
-      Contract__c = c.Id,
+      Subscription_Contract__c = c.Id,
       Account__c = acc.Id,
       Amount__c = 1500,
       Status__c = 'Failed',

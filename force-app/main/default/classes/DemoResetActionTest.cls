@@ -107,7 +107,7 @@ private class DemoResetActionTest {
       [
         SELECT COUNT()
         FROM Payment_History__c
-        WHERE Contract__c = :somchaiContract.Id
+        WHERE Subscription_Contract__c = :somchaiContract.Id
       ]
     );
     Assert.areEqual(
@@ -194,7 +194,7 @@ private class DemoResetActionTest {
       [
         SELECT COUNT()
         FROM Payment_History__c
-        WHERE Contract__r.Account__r.Name = 'Somchai Sukhumvit'
+        WHERE Subscription_Contract__r.Account__r.Name = 'Somchai Sukhumvit'
       ]
     );
     Assert.areEqual(

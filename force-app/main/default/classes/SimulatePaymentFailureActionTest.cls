@@ -88,7 +88,7 @@ private class SimulatePaymentFailureActionTest {
 
     Test.startTest();
     insert new Payment_History__c(
-      Contract__c = c.Id,
+      Subscription_Contract__c = c.Id,
       Amount__c = 1500,
       Status__c = 'Success'
     );

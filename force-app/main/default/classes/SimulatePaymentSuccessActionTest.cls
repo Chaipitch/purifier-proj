@@ -29,7 +29,7 @@ private class SimulatePaymentSuccessActionTest {
     Payment_History__c p = [
       SELECT Amount__c, Status__c, Account__c
       FROM Payment_History__c
-      WHERE Contract__c = :c.Id
+      WHERE Subscription_Contract__c = :c.Id
     ];
     Assert.areEqual(900, p.Amount__c);
     Assert.areEqual('Success', p.Status__c);
