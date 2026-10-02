@@ -4,6 +4,18 @@ Newest first. Each entry lists what changed for the people using the demo, then 
 
 ---
 
+## 2026-10-02 — Bell notification for inbound LINE messages
+
+- **When a customer messages the LINE OA, the owner of their Lead or Account gets a Salesforce notification** (the bell, and the Salesforce mobile app). The notification shows "New LINE message from <name>" and the first 120 characters of the message. Clicking it opens the record, with the message in the chat.
+- **How it works:**
+  - `LineMessageTrigger` publishes a `LINE_Inbound_Message__e` event for each inbound message that has a Lead or Account.
+  - `LineInboundNotificationTrigger` handles the event as the Automated Process user, which can send notifications; the webhook's guest user can't.
+  - It sends the custom notification type **LINE Inbound Message**.
+- **Who gets it:** only the record owner. To notify a team instead, change `LineInboundNotifications.notifyOwners` to send to a public group or queue id.
+- **Metadata:** notification type `LINE_Inbound_Message`, platform event `LINE_Inbound_Message__e` (`Message_Id__c`), trigger `LineInboundNotificationTrigger`, class `LineInboundNotifications` and its test; `LINE_Webhook_Guest` can publish the new event.
+
+---
+
 ## 2026-10-02 — Contracts and assets move to custom objects
 
 ### What's different for users

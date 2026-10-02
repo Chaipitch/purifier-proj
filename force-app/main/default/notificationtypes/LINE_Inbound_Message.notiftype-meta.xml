@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomNotificationType xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customNotifTypeName>LINE Inbound Message</customNotifTypeName>
+    <description
+  >A customer sent a message to the NORITZ LINE Official Account.</description>
+    <desktop>true</desktop>
+    <masterLabel>LINE Inbound Message</masterLabel>
+    <mobile>true</mobile>
+</CustomNotificationType>

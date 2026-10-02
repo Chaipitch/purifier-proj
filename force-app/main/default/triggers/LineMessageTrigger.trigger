@@ -20,4 +20,21 @@ trigger LineMessageTrigger on LINE_Message__c(after insert, after delete) {
   if (!events.isEmpty()) {
     EventBus.publish(events);
   }
+
+  // New messages from the customer ring the owner's notification bell (see LineInboundNotifications).
+  if (Trigger.isInsert) {
+    List<LINE_Inbound_Message__e> inbound = new List<LINE_Inbound_Message__e>();
+    for (LINE_Message__c m : changed) {
+      if (
+        m.Direction__c == 'Inbound' &&
+        (m.Account__c != null ||
+        m.Lead__c != null)
+      ) {
+        inbound.add(new LINE_Inbound_Message__e(Message_Id__c = m.Id));
+      }
+    }
+    if (!inbound.isEmpty()) {
+      EventBus.publish(inbound);
+    }
+  }
 }

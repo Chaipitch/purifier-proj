@@ -214,9 +214,9 @@ private class NoritzLineChatControllerTest {
     Test.stopTest();
 
     Assert.areEqual(
-      2,
+      3,
       used,
-      'Expected the insert plus a single publish call for the batch'
+      'Expected the insert, one refresh publish and one notification publish for the batch'
     );
   }
 
