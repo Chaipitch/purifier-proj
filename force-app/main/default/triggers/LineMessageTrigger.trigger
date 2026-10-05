@@ -21,8 +21,11 @@ trigger LineMessageTrigger on LINE_Message__c(after insert, after delete) {
     EventBus.publish(events);
   }
 
-  // New messages from the customer ring the owner's notification bell (see LineInboundNotifications).
   if (Trigger.isInsert) {
+    // The first message sent to an open lead moves it to Working - Contacted.
+    LeadFirstContact.markContacted(changed);
+
+    // New messages from the customer ring the owner's notification bell (see LineInboundNotifications).
     List<LINE_Inbound_Message__e> inbound = new List<LINE_Inbound_Message__e>();
     for (LINE_Message__c m : changed) {
       if (

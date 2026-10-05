@@ -4,6 +4,15 @@ Newest first. Each entry lists what changed for the people using the demo, then 
 
 ---
 
+## 2026-10-05 — Lead moves to Working - Contacted on first contact
+
+- **The first LINE message sent to a lead moves it from Open - Not Contacted to Working - Contacted.** That covers a message typed in the chat, one picked from Templates, and the checkout link.
+- **Only from Open - Not Contacted:** a lead whose status has already moved on is left alone. Messages from the customer don't count, and neither do phone calls.
+- **Reset Demo** still puts LINE leads back to Open - Not Contacted.
+- **Metadata:** new `LeadFirstContact` class (and `LeadFirstContactTest`), called from `LineMessageTrigger` when messages are inserted.
+
+---
+
 ## 2026-10-05 — Four more chat templates
 
 - **The Templates menu above the chat box has four new messages.** They're in English, like the existing five, and `{Name}` fills in the customer's first name.
