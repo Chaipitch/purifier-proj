@@ -327,6 +327,35 @@ private class DemoResetActionTest {
     );
   }
 
+  // A lead converted with a Company becomes a business account, which has no last name: the
+  // fresh lead takes the original lead's name instead.
+  @IsTest
+  static void leadConvertedWithACompanyComesBackWithItsName() {
+    Lead l = new Lead(
+      FirstName = 'Somying',
+      LastName = 'Jaidee',
+      Company = 'Jaidee Co',
+      LINE_User_ID__c = 'U_company',
+      Subscription_Plan__c = 'Standard (900 THB)'
+    );
+    insert l;
+    Test.setMock(HttpCalloutMock.class, new LineCalloutMock());
+    Id accountId = LeadConversionService.convertOnFirstPayment(l.Id);
+
+    Test.startTest();
+    Id opened = DemoResetAction.resetFrom(accountId);
+    Test.stopTest();
+
+    Lead fresh = [
+      SELECT Id, FirstName, LastName
+      FROM Lead
+      WHERE LINE_User_ID__c = 'U_company' AND IsConverted = FALSE
+    ];
+    Assert.areEqual('Somying', fresh.FirstName);
+    Assert.areEqual('Jaidee', fresh.LastName);
+    Assert.areEqual(fresh.Id, opened);
+  }
+
   // The button pressed on a converted customer's page (or its contract) opens the fresh lead.
   @IsTest
   static void buttonOnAConvertedCustomerOpensTheFreshLead() {

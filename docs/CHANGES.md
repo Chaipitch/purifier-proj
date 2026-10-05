@@ -21,6 +21,7 @@ Newest first. Each entry lists what changed for the people using the demo, then 
 - **`scripts/apex/reset_demo.apex` still resets everyone** at once.
 - **Unchanged:** Somchai's reset, and other LINE customers. Phone Calls and Cases aren't touched; check with the consultant before adding them.
 - **One-time clean-up:** `scripts/apex/cleanup_archived_customers.apex` deletes the "Archived - …" customers left by earlier rehearsals, and reports any Salesforce won't delete (for example ones with an activated standard Contract).
+- **Fix:** resetting a customer converted from a Lead that had a Company filled in (a business account, which has no last name) failed with "Required fields are missing: [Last Name]". The fresh Lead now takes the original Lead's name, and a business account that can't be deleted is archived by its account name.
 - **Metadata:** `DemoResetAction` (new `resetFrom`), `DemoResetActionTest`, `lwc/noritzResetDemo`, new actions `Lead.Reset_Demo` and `Account.Reset_Demo`, `Lead-Lead Layout`, `Account_Record_Page`.
 
 ---

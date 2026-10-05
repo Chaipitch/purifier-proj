@@ -29,7 +29,7 @@ public with sharing class DemoResetAction {
     Id somchaiId = resetSomchai();
     restoreConvertedLeads(
       [
-        SELECT Id, FirstName, LastName, LINE_User_ID__c
+        SELECT Id
         FROM Account
         WHERE Converted_From_LINE_Lead__c = TRUE AND LINE_User_ID__c != NULL
       ]
@@ -139,9 +139,25 @@ public with sharing class DemoResetAction {
   // its contracts (and their payments), products and chat, and a fresh lead with the same LINE
   // account and name takes its place: the next run starts from a brand-new lead again. If
   // Salesforce won't delete an account, it is archived instead (renamed, LINE id cleared).
-  private static void restoreConvertedLeads(List<Account> converted) {
-    if (converted.isEmpty()) {
+  private static void restoreConvertedLeads(List<Account> customers) {
+    if (customers.isEmpty()) {
       return;
+    }
+    List<Account> converted = [
+      SELECT Id, Name, FirstName, LastName, IsPersonAccount, LINE_User_ID__c
+      FROM Account
+      WHERE Id IN :customers
+    ];
+    // The fresh lead takes the original lead's name: a customer converted with a Company filled
+    // in is a business account, which has no first or last name.
+    Map<Id, Lead> originalByCustomer = new Map<Id, Lead>();
+    for (Lead l : [
+      SELECT ConvertedAccountId, FirstName, LastName
+      FROM Lead
+      WHERE ConvertedAccountId IN :converted
+      ORDER BY ConvertedDate
+    ]) {
+      originalByCustomer.put(l.ConvertedAccountId, l);
     }
 
     Map<Id, Id> customerOf = new Map<Id, Id>();
@@ -170,14 +186,17 @@ public with sharing class DemoResetAction {
     for (Integer i = 0; i < converted.size(); i++) {
       if (!results[i].isSuccess()) {
         Account a = converted[i];
-        archived.add(
-          new Account(
-            Id = a.Id,
-            LastName = ARCHIVED_PREFIX + a.LastName,
-            LINE_User_ID__c = null,
-            Converted_From_LINE_Lead__c = false
-          )
+        Account archive = new Account(
+          Id = a.Id,
+          LINE_User_ID__c = null,
+          Converted_From_LINE_Lead__c = false
         );
+        if (a.IsPersonAccount) {
+          archive.LastName = ARCHIVED_PREFIX + a.LastName;
+        } else {
+          archive.Name = ARCHIVED_PREFIX + a.Name;
+        }
+        archived.add(archive);
       }
     }
     update archived;
@@ -185,11 +204,16 @@ public with sharing class DemoResetAction {
     Map<Id, Lead> freshByCustomer = new Map<Id, Lead>();
     for (Account a : converted) {
       customerOf.put(a.Id, a.Id);
+      Lead original = originalByCustomer.get(a.Id);
+      String firstName = original != null ? original.FirstName : a.FirstName;
+      String lastName = original != null && String.isNotBlank(original.LastName)
+        ? original.LastName
+        : String.isNotBlank(a.LastName) ? a.LastName : a.Name;
       freshByCustomer.put(
         a.Id,
         new Lead(
-          FirstName = a.FirstName,
-          LastName = a.LastName,
+          FirstName = firstName,
+          LastName = lastName,
           LINE_User_ID__c = a.LINE_User_ID__c,
           LeadSource = 'LINE',
           Status = OPEN_STATUS
