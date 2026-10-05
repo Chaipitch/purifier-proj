@@ -17,6 +17,8 @@ Newest first. Each entry lists what changed for the people using the demo, then 
 
 - **Metadata:** `customMetadata/LINE_Chat_Template.Checkout_Reminder`, `.Installation_Confirmed`, `.Technician_On_The_Way`, `.Payment_Failed_Follow_Up` (Sort Order 6–9, after the existing five).
 
+---
+
 ## 2026-10-02 — Bell notification for inbound LINE messages
 
 - **When a customer messages the LINE OA, the owner of their Lead or Account gets a Salesforce notification** (the bell, and the Salesforce mobile app). The notification shows "New LINE message from <name>" and the first 120 characters of the message. Clicking it opens the record, with the message in the chat.
