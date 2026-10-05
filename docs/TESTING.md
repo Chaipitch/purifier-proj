@@ -63,6 +63,15 @@ Use a LINE account that isn't linked to any Account or Lead yet (or block and re
 | C2. Edit the Lead: Subscription Plan = **Premium (1,500 THB)**, then save | Saved                                                                                                                                                                                                                 |
 | C3. Click **Send Stripe Checkout Link**                                   | Green toast "Checkout link sent". Phone gets "Hi …, Thank you for choosing NORITZ…" with `https://checkout.stripe.com/demo/sub_demo_xxxxxx`. The Lead's Status is **Working - Contacted** and Stripe Sub ID is filled |
 
+### C+. Optional: the first payment fails
+
+| Step                                                             | Expected                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C4. On the Lead (after C3), click **Simulate Payment Failure**   | Orange toast. Within ~2 s the Lead's chat shows "Payment failed for your monthly subscription…" with the retry link, and the phone gets it. Customer History shows a contract with a red **Payment Failed** badge and a bold red failed payment (Card Expired) |
+| C5. Click **Simulate Payment Failure** before C3 on another Lead | Error toast: "Send the Stripe checkout link first…". Nothing is recorded                                                                                                                                                                                       |
+
+Then D works as usual: the conversion reuses that contract, so the customer ends up with one contract (Active) showing the failed and the successful payment.
+
 ### D. First payment converts the Lead
 
 | Step                                                | Expected                                                                                                                                                                             |

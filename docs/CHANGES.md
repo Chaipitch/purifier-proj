@@ -4,6 +4,15 @@ Newest first. Each entry lists what changed for the people using the demo, then 
 
 ---
 
+## 2026-10-05 — Simulate Payment Failure on a Lead
+
+- **Leads have a Simulate Payment Failure button** (after Send Stripe Checkout Link). It records a failed first payment (Card Expired) against a Pending Payment contract for the lead. The Payment Failure Recovery flow marks that contract Payment Failed, and the retry link goes to the lead's LINE chat. The Lead's Customer History shows the contract with a red badge and the failed payment in bold red.
+- **It needs the checkout link first** (the lead must have a plan and a Stripe Sub ID); otherwise it says so and records nothing.
+- **A later Simulate Payment Success reuses that contract**, so the new customer has one contract (Active) with the failed and the successful payment, not two contracts.
+- **Metadata:** `SimulatePaymentFailureAction` (Lead path), `LeadConversionService` (`contractFor`, reuses the lead's contract, moves its payments to the customer), `SendPaymentRetryAction` (retry link to a lead), `CustomerHistoryController` (lead contracts), `lwc/noritzSimulatePaymentFailure`, new action `Lead.Simulate_Payment_Failure` on the Lead layout; tests in `SimulatePaymentFailureActionTest` and `LeadConversionServiceTest`.
+
+---
+
 ## 2026-10-05 — Reset Demo starts every run from scratch
 
 - **Converted customers are deleted, not archived.** Each customer converted from a LINE lead is removed with their contracts (and payments), products and chat. A fresh Lead with the same name and LINE account takes their place. "Archived - …" accounts no longer pile up. If Salesforce refuses to delete one, it is still archived as before.

@@ -25,36 +25,28 @@ public with sharing class SendPaymentRetryAction {
     public void execute(QueueableContext context) {
       List<LINE_Message__c> messages = new List<LINE_Message__c>();
       for (Contracts__c c : [
-        SELECT
-          Id,
-          Account__c,
-          Account__r.FirstName,
-          Account__r.LastName,
-          Account__r.LINE_User_ID__c,
-          Stripe_Sub_ID__c
+        SELECT Id, Account__c, Lead__c, Stripe_Sub_ID__c
         FROM Contracts__c
         WHERE Id IN :contractIds
       ]) {
+        // A lead's first payment has no customer yet: the retry link goes to the lead's chat.
+        Id customerId = c.Account__c != null ? c.Account__c : c.Lead__c;
+        if (customerId == null) {
+          continue;
+        }
+        LineMessagingService.Recipient to = LineMessagingService.recipientFor(
+          customerId
+        );
         String reference = String.isBlank(c.Stripe_Sub_ID__c)
           ? (String) c.Id
           : c.Stripe_Sub_ID__c;
         String body =
-          LineMessagingService.addressAs(
-            c.Account__r.FirstName,
-            c.Account__r.LastName
-          ) +
+          LineMessagingService.addressAs(to.firstName, to.lastName) +
           'Payment failed for your monthly subscription. Please update your payment method using this link:\n' +
           RETRY_BASE_URL +
           reference +
           '/update-payment';
-        messages.add(
-          LineMessagingService.outbound(
-            c.Account__c,
-            c.Account__r.LINE_User_ID__c,
-            body,
-            'Payment Retry'
-          )
-        );
+        messages.add(LineMessagingService.outbound(to, body, 'Payment Retry'));
       }
       LineMessagingService.pushAndInsert(messages);
     }

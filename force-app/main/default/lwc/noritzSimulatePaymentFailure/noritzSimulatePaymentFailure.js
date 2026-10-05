@@ -13,8 +13,9 @@ export default class NoritzSimulatePaymentFailure extends LightningElement {
     }
     this.isExecuting = true;
     try {
-      await simulate({ contractId: this.recordId });
-      // The recovery flow has already updated the contract in the same save; show it now.
+      await simulate({ recordId: this.recordId });
+      // The recovery flow has already updated the contract in the same save; show it now. On a Lead
+      // the retry message and history update live through the chat refresh event.
       notifyRecordUpdateAvailable([{ recordId: this.recordId }]);
       this.toast(
         "Payment failure simulated",

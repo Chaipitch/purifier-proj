@@ -46,20 +46,24 @@ public with sharing class CustomerHistoryController {
         AND Lead__c = :leadId)
       ORDER BY CreatedDate DESC
     ];
-    if (accountId != null) {
-      history.contracts = [
-        SELECT
-          Id,
-          Name,
-          Subscription_Plan__c,
-          Status__c,
-          Contract_Start_Date__c,
-          Next_Billing_Date__c
-        FROM Contracts__c
-        WHERE Account__c = :accountId
-        ORDER BY Contract_Start_Date__c DESC NULLS LAST, CreatedDate DESC
-      ];
-    }
+    // A lead's contract exists only after a failed first payment (see SimulatePaymentFailureAction).
+    history.contracts = [
+      SELECT
+        Id,
+        Name,
+        Subscription_Plan__c,
+        Status__c,
+        Contract_Start_Date__c,
+        Next_Billing_Date__c
+      FROM Contracts__c
+      WHERE
+        (Account__c != NULL
+        AND Account__c = :accountId)
+        OR (Lead__c != NULL
+        AND Lead__c = :leadId
+        AND Account__c = NULL)
+      ORDER BY Contract_Start_Date__c DESC NULLS LAST, CreatedDate DESC
+    ];
     history.payments = [
       SELECT
         Id,

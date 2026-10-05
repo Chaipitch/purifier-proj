@@ -4,7 +4,7 @@
     <isExposed>true</isExposed>
     <masterLabel>Simulate Payment Failure</masterLabel>
     <description
-  >One-click Contract action that records a failed payment, as the payment provider would.</description>
+  >One-click action (contract or Lead) that records a failed payment, as the payment provider would.</description>
     <targets>
         <target>lightning__RecordAction</target>
     </targets>

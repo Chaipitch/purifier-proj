@@ -117,4 +117,32 @@ private class LeadConversionServiceTest {
       Assert.isTrue(e.getMessage().contains('already been converted'));
     }
   }
+
+  // A failed first attempt left a Payment Failed contract on the lead: the payment that converts
+  // the lead reuses it, so the customer has one contract with both payments.
+  @IsTest
+  static void conversionReusesTheContractOfAFailedAttempt() {
+    Test.setMock(HttpCalloutMock.class, new LineCalloutMock());
+    SimulatePaymentFailureAction.simulate(lead().Id);
+
+    Test.startTest();
+    Id accountId = SimulatePaymentSuccessAction.simulate(lead().Id);
+    Test.stopTest();
+
+    Contracts__c c = [
+      SELECT Id, Status__c, Account__c
+      FROM Contracts__c
+      WHERE Lead__c = :lead().Id
+    ];
+    Assert.areEqual(accountId, c.Account__c);
+    Assert.areEqual('Active', c.Status__c);
+    Assert.areEqual(
+      2,
+      [
+        SELECT COUNT()
+        FROM Payment_History__c
+        WHERE Subscription_Contract__c = :c.Id AND Account__c = :accountId
+      ]
+    );
+  }
 }

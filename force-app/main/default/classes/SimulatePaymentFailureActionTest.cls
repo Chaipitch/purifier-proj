@@ -107,4 +107,107 @@ private class SimulatePaymentFailureActionTest {
       ]
     );
   }
+
+  // A lead's first payment fails after the checkout link: a Pending Payment contract is created
+  // for the lead, the recovery flow marks it Payment Failed, and the retry link goes to the
+  // lead's LINE chat.
+  @IsTest
+  static void leadFirstPaymentFailsAndGetsTheRetryLink() {
+    Lead l = new Lead(
+      FirstName = 'Somying',
+      LastName = 'Jaidee',
+      LINE_User_ID__c = 'U_lead_fail',
+      LeadSource = 'LINE',
+      Subscription_Plan__c = 'Standard (900 THB)',
+      Stripe_Sub_ID__c = 'sub_demo_lead99'
+    );
+    insert l;
+    Test.setMock(HttpCalloutMock.class, new LineCalloutMock());
+
+    Test.startTest();
+    SimulatePaymentFailureAction.simulate(l.Id);
+    Test.stopTest();
+
+    Contracts__c c = [
+      SELECT Status__c, Account__c, Subscription_Plan__c, Stripe_Sub_ID__c
+      FROM Contracts__c
+      WHERE Lead__c = :l.Id
+    ];
+    Assert.areEqual('Payment Failed', c.Status__c);
+    Assert.isNull(c.Account__c);
+    Assert.areEqual('Standard (900 THB)', c.Subscription_Plan__c);
+    Assert.areEqual('sub_demo_lead99', c.Stripe_Sub_ID__c);
+
+    Payment_History__c p = [
+      SELECT Amount__c, Status__c, Lead__c
+      FROM Payment_History__c
+      WHERE Subscription_Contract__c = :c.Id
+    ];
+    Assert.areEqual(900, p.Amount__c);
+    Assert.areEqual('Failed', p.Status__c);
+    Assert.areEqual(l.Id, p.Lead__c);
+
+    LINE_Message__c msg = [
+      SELECT
+        Lead__c,
+        Account__c,
+        Message_Type__c,
+        Message_Body__c,
+        Delivery_Status__c
+      FROM LINE_Message__c
+      WHERE Message_Type__c = 'Payment Retry'
+    ];
+    Assert.areEqual(l.Id, msg.Lead__c);
+    Assert.isNull(msg.Account__c);
+    Assert.areEqual('Sent', msg.Delivery_Status__c);
+    Assert.isTrue(msg.Message_Body__c.startsWith('Hi Somying,'));
+    Assert.isTrue(
+      msg.Message_Body__c.endsWith(
+        'https://checkout.stripe.com/demo/sub_demo_lead99/update-payment'
+      )
+    );
+  }
+
+  @IsTest
+  static void leadFailingTwiceKeepsOneContract() {
+    Lead l = new Lead(
+      LastName = 'Twice',
+      Subscription_Plan__c = 'Premium (1,500 THB)',
+      Stripe_Sub_ID__c = 'sub_demo_twice'
+    );
+    insert l;
+    Test.setMock(HttpCalloutMock.class, new LineCalloutMock());
+
+    SimulatePaymentFailureAction.simulate(l.Id);
+    SimulatePaymentFailureAction.simulate(l.Id);
+
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM Contracts__c WHERE Lead__c = :l.Id]
+    );
+    Assert.areEqual(
+      2,
+      [SELECT COUNT() FROM Payment_History__c WHERE Lead__c = :l.Id]
+    );
+  }
+
+  @IsTest
+  static void leadNeedsTheCheckoutLinkFirst() {
+    Lead l = new Lead(
+      LastName = 'No Checkout',
+      Subscription_Plan__c = 'Standard (900 THB)'
+    );
+    insert l;
+
+    try {
+      SimulatePaymentFailureAction.simulate(l.Id);
+      Assert.fail('Expected an error');
+    } catch (AuraHandledException e) {
+      Assert.isTrue(e.getMessage().contains('checkout link first'));
+    }
+    Assert.areEqual(
+      0,
+      [SELECT COUNT() FROM Contracts__c WHERE Lead__c = :l.Id]
+    );
+  }
 }
