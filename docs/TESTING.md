@@ -28,7 +28,7 @@ Expected: **54 tests pass**, 0 fail.
 
 1. Log in to the org (alias `noritz`) and open App Launcher → **Service Console**.
 2. Check your user has the **LINE Chat User** permission set.
-3. Open Somchai's Account (or any Lead or contract) and click **Reset Demo**. Expect a green "Demo reset" toast, then the page reloads.
+3. Reset everything: `sf apex run --target-org noritz --file scripts/apex/reset_demo.apex`. (The **Reset Demo** button resets only the record it's pressed on.)
 4. On a phone, open the NORITZ LINE Official Account chat.
 5. If anything was deployed today, reload the Salesforce page twice.
 
@@ -106,13 +106,17 @@ Use a LINE account that isn't linked to any Account or Lead yet (or block and re
 
 ### I. Reset
 
-| Step                                                            | Expected                                                                                                                                                                                                              |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| I1. **Reset Demo** on the converted customer's Account (from D) | Toast, then the fresh Lead that replaces them opens. No LINE messages arrive on the phone. On any other page the page just reloads                                                                                    |
-| I2. Somchai                                                     | Active, 2 successful payments, 3 starting chat messages                                                                                                                                                               |
-| I3. The customer converted in D                                 | Gone, with their contract, payments, purifier and chat (search doesn't find them)                                                                                                                                     |
-| I4. Leads                                                       | A fresh Lead with the same name and LINE account, **no plan and no Stripe Sub ID**, Status **Open - Not Contacted**, chat showing only "[Added the OA as a friend]". Other LINE leads look the same. Repeat C–D on it |
-| I5. Click Reset Demo again                                      | Same result (safe to repeat)                                                                                                                                                                                          |
+The **Reset Demo** button resets only the customer it's pressed on. To reset everyone at once, run `sf apex run --target-org noritz --file scripts/apex/reset_demo.apex`.
+
+| Step                                                            | Expected                                                                                                                                                        |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I1. **Reset Demo** on the converted customer's Account (from D) | Toast, then the fresh Lead that replaces them opens. No LINE messages arrive on the phone                                                                       |
+| I2. The customer converted in D                                 | Gone, with their contract, payments, purifier and chat (search doesn't find them)                                                                               |
+| I3. The fresh Lead                                              | Same name and LINE account, **no plan and no Stripe Sub ID**, Status **Open - Not Contacted**, chat showing only "[Added the OA as a friend]". Repeat C–D on it |
+| I4. **Reset Demo** on another LINE Lead                         | That Lead goes back the same way. Other Leads and customers are unchanged                                                                                       |
+| I5. **Reset Demo** on Somchai's Account or contract             | Page reloads. Somchai is Active with 2 successful payments and 3 starting chat messages. Nobody else changes                                                    |
+| I6. **Reset Demo** on an Account or Lead with no LINE account   | Error toast: "This record isn't linked to LINE…". Nothing changes                                                                                               |
+| I7. Click Reset Demo again                                      | Same result (safe to repeat)                                                                                                                                    |
 
 ## 4. If a step fails
 

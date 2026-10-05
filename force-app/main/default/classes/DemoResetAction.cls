@@ -1,48 +1,145 @@
-// "Reset Demo" button on the Lead, Account and contract pages: puts the demo customers back to
-// their pre-demo state, creating Somchai's contract and purifier if they are missing. Safe to run
-// any number of times. Touches Somchai Sukhumvit, every customer and lead linked to LINE, and
-// customers converted from a LINE lead (they become a fresh lead again). Records without a LINE
-// User ID are left alone. scripts/apex/reset_demo.apex calls the same code.
+// Puts demo customers back to their pre-demo state. Safe to run any number of times.
+// - The "Reset Demo" button (Lead, Account and contract pages) resets only the customer it is
+//   pressed on: that lead, that customer, or the customer the contract belongs to.
+// - scripts/apex/reset_demo.apex resets everyone: Somchai Sukhumvit (creating his contract and
+//   purifier if they are missing), every customer and lead linked to LINE, and customers
+//   converted from a LINE lead (they become a fresh lead again).
+// Records without a LINE User ID, other than Somchai, are never touched.
 public with sharing class DemoResetAction {
   private static final String FOLLOW_TEXT = '[Added the OA as a friend]';
   @TestVisible
   private static final String ARCHIVED_PREFIX = 'Archived - ';
   private static final String OPEN_STATUS = 'Open - Not Contacted';
   @TestVisible
+  private static final String SOMCHAI_NAME = 'Somchai Sukhumvit';
+  @TestVisible
   private static final String SOMCHAI_SUB_ID = 'sub_demo_12345';
   @TestVisible
   private static final String SOMCHAI_SERIAL = 'NZ-2026-9981';
+  @TestVisible
+  private static final String NOT_IN_DEMO = 'This record isn\'t linked to LINE, so it isn\'t part of the demo and there is nothing to reset.';
 
   // Records the reset removed (a converted customer, its contracts and products), each mapped to
   // the fresh lead that replaces the customer.
   private static Map<Id, Id> replacedBy = new Map<Id, Id>();
 
+  // Everyone (the script).
   @AuraEnabled
   public static void reset() {
     Id somchaiId = resetSomchai();
-    restoreConvertedLeads();
-    resetLineFriends(somchaiId);
-    resetLineLeads();
+    restoreConvertedLeads(
+      [
+        SELECT Id, FirstName, LastName, LINE_User_ID__c
+        FROM Account
+        WHERE Converted_From_LINE_Lead__c = TRUE AND LINE_User_ID__c != NULL
+      ]
+    );
+    resetLineFriends(
+      new Map<Id, Account>(
+          [
+            SELECT Id
+            FROM Account
+            WHERE LINE_User_ID__c != NULL AND Id != :somchaiId
+          ]
+        )
+        .keySet()
+    );
+    resetLineLeads(
+      [
+        SELECT Id
+        FROM Lead
+        WHERE LINE_User_ID__c != NULL AND IsConverted = FALSE
+      ]
+    );
   }
 
-  // The button: resets, then returns the page to open if the one it was pressed on no longer
-  // exists (a converted customer is replaced by a fresh lead), or null to reload the same page.
+  // The button: resets only the customer behind recordId (a Lead, an Account or a contract).
+  // Returns the page to open when that record no longer exists (a converted customer is replaced
+  // by a fresh lead), or null to reload the same page.
   @AuraEnabled
   public static Id resetFrom(Id recordId) {
-    reset();
-    return recordId == null ? null : replacedBy.get(recordId);
+    Id customerId = customerBehind(recordId);
+    if (customerId == null) {
+      throw error('Reset Demo works on a Lead, a customer or a contract.');
+    }
+
+    if (customerId.getSObjectType() == Lead.SObjectType) {
+      List<Lead> leads = [
+        SELECT Id
+        FROM Lead
+        WHERE Id = :customerId AND LINE_User_ID__c != NULL
+      ];
+      if (leads.isEmpty()) {
+        throw error(NOT_IN_DEMO);
+      }
+      resetLineLeads(leads);
+      return null;
+    }
+
+    Account customer = [
+      SELECT
+        Id,
+        Name,
+        FirstName,
+        LastName,
+        LINE_User_ID__c,
+        Converted_From_LINE_Lead__c
+      FROM Account
+      WHERE Id = :customerId
+    ];
+    if (customer.Name == SOMCHAI_NAME) {
+      resetSomchai();
+      return null;
+    }
+    if (customer.LINE_User_ID__c == null) {
+      throw error(NOT_IN_DEMO);
+    }
+    if (customer.Converted_From_LINE_Lead__c) {
+      restoreConvertedLeads(new List<Account>{ customer });
+      return replacedBy.containsKey(recordId)
+        ? replacedBy.get(recordId)
+        : replacedBy.get(customerId);
+    }
+    resetLineFriends(new Set<Id>{ customerId });
+    return null;
+  }
+
+  // The Lead or Account a record belongs to: a converted lead's customer, a contract's customer
+  // (or its lead before conversion). Null for anything else.
+  private static Id customerBehind(Id recordId) {
+    if (recordId == null) {
+      return null;
+    }
+    SObjectType type = recordId.getSObjectType();
+    if (type == Account.SObjectType) {
+      return recordId;
+    }
+    if (type == Lead.SObjectType) {
+      Lead l = [
+        SELECT Id, IsConverted, ConvertedAccountId
+        FROM Lead
+        WHERE Id = :recordId
+      ];
+      return l.IsConverted && l.ConvertedAccountId != null
+        ? l.ConvertedAccountId
+        : l.Id;
+    }
+    if (type == Contracts__c.SObjectType) {
+      Contracts__c c = [
+        SELECT Account__c, Lead__c
+        FROM Contracts__c
+        WHERE Id = :recordId
+      ];
+      return c.Account__c != null ? c.Account__c : c.Lead__c;
+    }
+    return null;
   }
 
   // A conversion can't be undone. So each customer converted from a LINE lead is deleted, with
   // its contracts (and their payments), products and chat, and a fresh lead with the same LINE
   // account and name takes its place: the next run starts from a brand-new lead again. If
   // Salesforce won't delete an account, it is archived instead (renamed, LINE id cleared).
-  private static void restoreConvertedLeads() {
-    List<Account> converted = [
-      SELECT Id, FirstName, LastName, LINE_User_ID__c
-      FROM Account
-      WHERE Converted_From_LINE_Lead__c = TRUE AND LINE_User_ID__c != NULL
-    ];
+  private static void restoreConvertedLeads(List<Account> converted) {
     if (converted.isEmpty()) {
       return;
     }
@@ -123,12 +220,7 @@ public with sharing class DemoResetAction {
   // Open LINE leads go back to how a brand-new LINE friend looks: chat trimmed to the "added as a
   // friend" line, no plan, subscription or filter date, no contracts or products recorded against
   // them, and Open - Not Contacted.
-  private static void resetLineLeads() {
-    List<Lead> leads = [
-      SELECT Id
-      FROM Lead
-      WHERE LINE_User_ID__c != NULL AND IsConverted = FALSE
-    ];
+  private static void resetLineLeads(List<Lead> leads) {
     if (leads.isEmpty()) {
       return;
     }
@@ -167,7 +259,7 @@ public with sharing class DemoResetAction {
     List<Account> accounts = [
       SELECT Id, LINE_User_ID__c
       FROM Account
-      WHERE Name = 'Somchai Sukhumvit'
+      WHERE Name = :SOMCHAI_NAME
       LIMIT 1
     ];
     if (accounts.isEmpty()) {
@@ -254,21 +346,13 @@ public with sharing class DemoResetAction {
     return somchai.Id;
   }
 
-  // Everyone else with a LINE User ID (for example people who added the OA while testing).
+  // Other customers with a LINE User ID (for example people who added the OA while testing).
   // Payments and chat are cleared except the "added as a friend" line. Payment Failed contracts
   // go back to Active. The customer is Active if they have an Active contract, otherwise Prospect.
-  private static void resetLineFriends(Id somchaiId) {
-    Map<Id, Account> friends = new Map<Id, Account>(
-      [
-        SELECT Id
-        FROM Account
-        WHERE LINE_User_ID__c != NULL AND Id != :somchaiId
-      ]
-    );
-    if (friends.isEmpty()) {
+  private static void resetLineFriends(Set<Id> friendIds) {
+    if (friendIds.isEmpty()) {
       return;
     }
-    Set<Id> friendIds = friends.keySet();
 
     delete [
       SELECT Id
@@ -303,12 +387,18 @@ public with sharing class DemoResetAction {
     }
     update contracts;
 
-    for (Account a : friends.values()) {
-      a.Customer_Status__c = withActiveContract.contains(a.Id)
-        ? 'Active'
-        : 'Prospect';
+    List<Account> friends = new List<Account>();
+    for (Id friendId : friendIds) {
+      friends.add(
+        new Account(
+          Id = friendId,
+          Customer_Status__c = withActiveContract.contains(friendId)
+            ? 'Active'
+            : 'Prospect'
+        )
+      );
     }
-    update friends.values();
+    update friends;
   }
 
   // setMessage so tests and logs see the text, not "Script-thrown exception".

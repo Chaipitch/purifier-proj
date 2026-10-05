@@ -21,8 +21,8 @@ export default class NoritzResetDemo extends NavigationMixin(LightningElement) {
       this.toast(
         "Demo reset",
         replacement
-          ? "LINE customers are back to the start. Opening the fresh lead."
-          : "LINE customers are back to the start. Reloading the page.",
+          ? "This customer is back to the start as a fresh lead. Opening it."
+          : "This customer is back to the start. Reloading the page.",
         "success"
       );
       // eslint-disable-next-line @lwc/lwc/no-async-operation

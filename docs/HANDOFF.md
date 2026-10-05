@@ -108,6 +108,7 @@ sf project deploy start --source-dir force-app/main/default/<path> --target-org 
   - In Apex, for a th_TH user, `Date.year()` returns 2569, and `Date.newInstance(2026, …)` and `toStartOfMonth()` save the wrong year. Use `GregorianDates` (`startOfMonth`, `addMonths`, `format`), `addDays`, `Date.valueOf('yyyy-MM-dd')` and `String.valueOf(date)`.
   - The LWCs format dates with `en-GB` and `calendar: "gregory"`, so they always show AD.
 - **Contracts and assets are custom objects** (`Contracts__c`, `Assets__c`), not standard Contract and Asset. Their status moves freely, and an asset can belong to a Lead only. See [MIGRATION_CUSTOM_OBJECTS.md](MIGRATION_CUSTOM_OBJECTS.md).
+- **Reset Demo button vs script:** the button resets only the record it's pressed on; `scripts/apex/reset_demo.apex` resets Somchai and every LINE customer and lead.
 - **A conversion can't be undone,** so the reset deletes converted customers (with their contracts, payments, products and chat) and creates a fresh Lead with the same LINE account in their place. If Salesforce refuses to delete one, it is archived ("Archived - <name>", LINE id cleared) instead.
 - **Seeding payments in Apex fires flows.** A successful payment fires the Payment Success flow, which messages the customer. Set `SendPaymentSuccessAction.suppress = true` while seeding (the reset does).
 - **Callouts in tests** need `Test.setMock(HttpCalloutMock.class, new LineCalloutMock())`, including tests that insert payments, because the flows message LINE.

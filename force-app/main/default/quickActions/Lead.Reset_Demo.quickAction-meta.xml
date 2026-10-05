@@ -2,7 +2,7 @@
 <QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
     <actionSubtype>Action</actionSubtype>
     <description
-  >One click: puts Somchai and every LINE-linked customer back to the pre-demo state, then reloads the page.</description>
+  >One click: puts this customer back to the pre-demo state, then reloads the page (or opens the fresh lead that replaces a converted customer).</description>
     <label>Reset Demo</label>
     <lightningWebComponent>noritzResetDemo</lightningWebComponent>
     <optionsCreateFeedItem>false</optionsCreateFeedItem>

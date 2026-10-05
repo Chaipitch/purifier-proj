@@ -357,11 +357,111 @@ private class DemoResetActionTest {
     );
   }
 
+  // The button resets only the customer it is pressed on.
   @IsTest
-  static void buttonOnSomchaiReloadsTheSamePage() {
+  static void buttonOnSomchaiResetsOnlySomchai() {
     Id somchaiId = [SELECT Id FROM Account WHERE Name = 'Somchai Sukhumvit'].Id;
 
-    Assert.isNull(DemoResetAction.resetFrom(somchaiId));
+    Assert.isNull(DemoResetAction.resetFrom(somchaiId), 'Reloads the page');
+
+    Assert.areEqual(
+      'Active',
+      [SELECT Customer_Status__c FROM Account WHERE Id = :somchaiId]
+      .Customer_Status__c
+    );
+    Assert.areEqual(
+      'Payment Suspended',
+      [SELECT Customer_Status__c FROM Account WHERE Name = 'Meng']
+      .Customer_Status__c,
+      'Other LINE customers are left alone'
+    );
+  }
+
+  @IsTest
+  static void buttonOnALineCustomerResetsOnlyThem() {
+    Id mengId = [SELECT Id FROM Account WHERE Name = 'Meng'].Id;
+
+    Assert.isNull(DemoResetAction.resetFrom(mengId));
+
+    Assert.areEqual(
+      'Active',
+      [SELECT Customer_Status__c FROM Account WHERE Id = :mengId]
+      .Customer_Status__c
+    );
+    Assert.areEqual(
+      'Active',
+      [SELECT Status__c FROM Contracts__c WHERE Account__c = :mengId].Status__c
+    );
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM LINE_Message__c WHERE Account__c = :mengId]
+    );
+    Assert.areEqual(
+      'Payment Suspended',
+      [SELECT Customer_Status__c FROM Account WHERE Name = 'Somchai Sukhumvit']
+      .Customer_Status__c,
+      'Somchai is left alone'
+    );
+    Assert.areEqual(
+      2,
+      [
+        SELECT COUNT()
+        FROM LINE_Message__c
+        WHERE Account__r.Name = 'New Friend'
+      ],
+      'Other LINE customers are left alone'
+    );
+  }
+
+  @IsTest
+  static void buttonOnALeadResetsOnlyThatLead() {
+    Lead pressed = new Lead(
+      LastName = 'Pressed',
+      LINE_User_ID__c = 'U_pressed',
+      Status = 'Working - Contacted',
+      Subscription_Plan__c = 'Premium (1,500 THB)'
+    );
+    Lead other = new Lead(
+      LastName = 'Other Lead',
+      LINE_User_ID__c = 'U_other',
+      Status = 'Working - Contacted',
+      Subscription_Plan__c = 'Standard (900 THB)'
+    );
+    insert new List<Lead>{ pressed, other };
+
+    Assert.isNull(DemoResetAction.resetFrom(pressed.Id));
+
+    Lead reset = [
+      SELECT Status, Subscription_Plan__c
+      FROM Lead
+      WHERE Id = :pressed.Id
+    ];
+    Assert.areEqual('Open - Not Contacted', reset.Status);
+    Assert.isNull(reset.Subscription_Plan__c);
+    Lead untouched = [
+      SELECT Status, Subscription_Plan__c
+      FROM Lead
+      WHERE Id = :other.Id
+    ];
+    Assert.areEqual('Working - Contacted', untouched.Status);
+    Assert.areEqual('Standard (900 THB)', untouched.Subscription_Plan__c);
+  }
+
+  @IsTest
+  static void buttonOutsideTheDemoExplains() {
+    Id otherId = [SELECT Id FROM Account WHERE Name = 'Other'].Id;
+
+    try {
+      DemoResetAction.resetFrom(otherId);
+      Assert.fail('Expected an error');
+    } catch (AuraHandledException e) {
+      Assert.areEqual(DemoResetAction.NOT_IN_DEMO, e.getMessage());
+    }
+    Assert.areEqual(
+      'Payment Suspended',
+      [SELECT Customer_Status__c FROM Account WHERE Id = :otherId]
+      .Customer_Status__c
+    );
   }
 
   @IsTest
