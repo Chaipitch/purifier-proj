@@ -4,6 +4,19 @@ Newest first. Each entry lists what changed for the people using the demo, then 
 
 ---
 
+## 2026-10-05 — Four more chat templates
+
+- **The Templates menu above the chat box has four new messages.** They're in English, like the existing five, and `{Name}` fills in the customer's first name.
+
+| Template                 | Shown on      | Text                                                                                                                                                         |
+| ------------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Checkout reminder        | Lead pages    | Hi {Name}, just a reminder that your NORITZ checkout link is still waiting. Once payment is complete we'll book your installation.                           |
+| Installation confirmed   | All pages     | Hi {Name}, your installation is confirmed. Our technician will call you before arriving. Please make sure someone is home.                                   |
+| Technician on the way    | All pages     | Hi {Name}, our technician is on the way and should arrive within 30 minutes.                                                                                 |
+| Payment failed follow-up | Account pages | Hi {Name}, we noticed your last payment didn't go through. Could you update your card using the link we sent? We're happy to help if you have any questions. |
+
+- **Metadata:** `customMetadata/LINE_Chat_Template.Checkout_Reminder`, `.Installation_Confirmed`, `.Technician_On_The_Way`, `.Payment_Failed_Follow_Up` (Sort Order 6–9, after the existing five).
+
 ## 2026-10-02 — Bell notification for inbound LINE messages
 
 - **When a customer messages the LINE OA, the owner of their Lead or Account gets a Salesforce notification** (the bell, and the Salesforce mobile app). The notification shows "New LINE message from <name>" and the first 120 characters of the message. Clicking it opens the record, with the message in the chat.
