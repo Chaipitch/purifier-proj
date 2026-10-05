@@ -49,11 +49,11 @@ Use a LINE account that isn't linked to any Account or Lead yet (or block and re
 
 ### B. Chat and templates on the Lead
 
-| Step                                                                    | Expected                                                                                                                                            |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B1. Click **Templates** above the message box and pick **Plan options** | The message box fills with the plan text, addressed by the customer's name. Nothing is sent yet                                                     |
-| B2. Edit the text if you like, press **Enter**                          | The message appears on the right (green) and arrives on the phone. The Lead's Status changes to **Working - Contacted** (reload the page to see it) |
-| B3. Press Shift+Enter in the box                                        | Adds a new line; doesn't send                                                                                                                       |
+| Step                                                                    | Expected                                                                                                                                                  |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1. Click **Templates** above the message box and pick **Plan options** | The message box fills with the plan text, addressed by the customer's name. Nothing is sent yet                                                           |
+| B2. Edit the text if you like, press **Enter**                          | The message appears on the right (green) and arrives on the phone. The Lead's Status changes to **Working - Contacted** within ~2 s, with no page refresh |
+| B3. Press Shift+Enter in the box                                        | Adds a new line; doesn't send                                                                                                                             |
 
 ### C. Checkout link from the Lead
 
