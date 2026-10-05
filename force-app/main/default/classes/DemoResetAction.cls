@@ -1,8 +1,8 @@
-// "Reset Demo" button on the contract (Contracts__c) page: puts the demo customers back to their
-// pre-demo state, creating Somchai's contract and purifier if they are missing. Safe to run any
-// number of times. Touches Somchai Sukhumvit, every customer and lead linked to
-// LINE, and customers converted from a LINE lead (they become a fresh lead again). Records without
-// a LINE User ID are left alone. scripts/apex/reset_demo.apex calls the same code.
+// "Reset Demo" button on the Lead, Account and contract pages: puts the demo customers back to
+// their pre-demo state, creating Somchai's contract and purifier if they are missing. Safe to run
+// any number of times. Touches Somchai Sukhumvit, every customer and lead linked to LINE, and
+// customers converted from a LINE lead (they become a fresh lead again). Records without a LINE
+// User ID are left alone. scripts/apex/reset_demo.apex calls the same code.
 public with sharing class DemoResetAction {
   private static final String FOLLOW_TEXT = '[Added the OA as a friend]';
   @TestVisible
@@ -13,6 +13,10 @@ public with sharing class DemoResetAction {
   @TestVisible
   private static final String SOMCHAI_SERIAL = 'NZ-2026-9981';
 
+  // Records the reset removed (a converted customer, its contracts and products), each mapped to
+  // the fresh lead that replaces the customer.
+  private static Map<Id, Id> replacedBy = new Map<Id, Id>();
+
   @AuraEnabled
   public static void reset() {
     Id somchaiId = resetSomchai();
@@ -21,9 +25,18 @@ public with sharing class DemoResetAction {
     resetLineLeads();
   }
 
-  // A conversion can't be undone. So the converted customer is archived (renamed, LINE id
-  // cleared) and a new lead with the same LINE id, name and plan takes its place: the next run
-  // starts from a lead again.
+  // The button: resets, then returns the page to open if the one it was pressed on no longer
+  // exists (a converted customer is replaced by a fresh lead), or null to reload the same page.
+  @AuraEnabled
+  public static Id resetFrom(Id recordId) {
+    reset();
+    return recordId == null ? null : replacedBy.get(recordId);
+  }
+
+  // A conversion can't be undone. So each customer converted from a LINE lead is deleted, with
+  // its contracts (and their payments), products and chat, and a fresh lead with the same LINE
+  // account and name takes its place: the next run starts from a brand-new lead again. If
+  // Salesforce won't delete an account, it is archived instead (renamed, LINE id cleared).
   private static void restoreConvertedLeads() {
     List<Account> converted = [
       SELECT Id, FirstName, LastName, LINE_User_ID__c
@@ -33,36 +46,66 @@ public with sharing class DemoResetAction {
     if (converted.isEmpty()) {
       return;
     }
-    Map<Id, Lead> originalByAccount = new Map<Id, Lead>();
-    for (Lead l : [
-      SELECT ConvertedAccountId, Subscription_Plan__c
-      FROM Lead
-      WHERE ConvertedAccountId IN :converted
-    ]) {
-      originalByAccount.put(l.ConvertedAccountId, l);
-    }
 
-    List<Lead> fresh = new List<Lead>();
+    Map<Id, Id> customerOf = new Map<Id, Id>();
+    List<Contracts__c> contracts = [
+      SELECT Id, Account__c
+      FROM Contracts__c
+      WHERE Account__c IN :converted
+    ];
+    for (Contracts__c c : contracts) {
+      customerOf.put(c.Id, c.Account__c);
+    }
+    List<Assets__c> assets = [
+      SELECT Id, Account__c
+      FROM Assets__c
+      WHERE Account__c IN :converted
+    ];
+    for (Assets__c a : assets) {
+      customerOf.put(a.Id, a.Account__c);
+    }
+    delete contracts; // their payments go with them (master-detail)
+    delete assets;
+    delete [SELECT Id FROM LINE_Message__c WHERE Account__c IN :converted];
+
+    List<Account> archived = new List<Account>();
+    List<Database.DeleteResult> results = Database.delete(converted, false);
+    for (Integer i = 0; i < converted.size(); i++) {
+      if (!results[i].isSuccess()) {
+        Account a = converted[i];
+        archived.add(
+          new Account(
+            Id = a.Id,
+            LastName = ARCHIVED_PREFIX + a.LastName,
+            LINE_User_ID__c = null,
+            Converted_From_LINE_Lead__c = false
+          )
+        );
+      }
+    }
+    update archived;
+
+    Map<Id, Lead> freshByCustomer = new Map<Id, Lead>();
     for (Account a : converted) {
-      Lead original = originalByAccount.get(a.Id);
-      fresh.add(
+      customerOf.put(a.Id, a.Id);
+      freshByCustomer.put(
+        a.Id,
         new Lead(
           FirstName = a.FirstName,
           LastName = a.LastName,
           LINE_User_ID__c = a.LINE_User_ID__c,
           LeadSource = 'LINE',
-          Subscription_Plan__c = original?.Subscription_Plan__c
+          Status = OPEN_STATUS
         )
       );
-      a.LastName = ARCHIVED_PREFIX + a.LastName;
-      a.LINE_User_ID__c = null;
-      a.Converted_From_LINE_Lead__c = false;
     }
-    update converted;
-    insert fresh;
+    insert freshByCustomer.values();
+    for (Id removed : customerOf.keySet()) {
+      replacedBy.put(removed, freshByCustomer.get(customerOf.get(removed)).Id);
+    }
 
     List<LINE_Message__c> follows = new List<LINE_Message__c>();
-    for (Lead l : fresh) {
+    for (Lead l : freshByCustomer.values()) {
       follows.add(
         new LINE_Message__c(
           Lead__c = l.Id,
@@ -77,7 +120,9 @@ public with sharing class DemoResetAction {
     insert follows;
   }
 
-  // Open LINE leads: chat back to the "added as a friend" line, status back to the start.
+  // Open LINE leads go back to how a brand-new LINE friend looks: chat trimmed to the "added as a
+  // friend" line, no plan, subscription or filter date, no contracts or products recorded against
+  // them, and Open - Not Contacted.
   private static void resetLineLeads() {
     List<Lead> leads = [
       SELECT Id
@@ -98,8 +143,22 @@ public with sharing class DemoResetAction {
       }
     }
     delete chatter;
+    // Before the lead update: the Lead highlight panel flow would copy a contract's plan back.
+    delete [
+      SELECT Id
+      FROM Contracts__c
+      WHERE Lead__c IN :leads AND Account__c = NULL
+    ];
+    delete [
+      SELECT Id
+      FROM Assets__c
+      WHERE Lead__c IN :leads AND Account__c = NULL
+    ];
     for (Lead l : leads) {
       l.Status = OPEN_STATUS;
+      l.Subscription_Plan__c = null;
+      l.Stripe_Sub_ID__c = null;
+      l.Next_Filter_Date__c = null;
     }
     update leads;
   }

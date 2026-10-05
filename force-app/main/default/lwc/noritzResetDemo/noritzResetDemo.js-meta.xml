@@ -4,7 +4,7 @@
     <isExposed>true</isExposed>
     <masterLabel>Reset Demo</masterLabel>
     <description
-  >One-click Contract action that puts Somchai and every LINE-linked customer back to the pre-demo state.</description>
+  >One-click action (Lead, Account and contract pages) that puts Somchai and every LINE-linked customer and lead back to the pre-demo state.</description>
     <targets>
         <target>lightning__RecordAction</target>
     </targets>

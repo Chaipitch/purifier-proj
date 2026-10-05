@@ -12,23 +12,23 @@ sf apex run test --target-org noritz --test-level RunLocalTests --code-coverage 
 
 Expected: **54 tests pass**, 0 fail.
 
-| Test class                                                              | Covers                                                                                                                         |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `LineWebhookHandlerTest`                                                | Signature check, new friend → Lead, Account wins over Lead, earlier messages attached, placeholder name and rename, redelivery |
-| `NoritzLineChatControllerTest`                                          | Chat on Account, Lead and Case; send and failed send; validation; templates                                                    |
-| `LineMessagingServiceTest`                                              | Name greeting, LINE unreachable                                                                                                |
-| `SendCheckoutLinkActionTest`                                            | Contract and Lead checkout link, LINE rejection, not linked, missing plan or subscription                                      |
-| `LeadConversionServiceTest`                                             | First payment converts the Lead (Person Account, contract, payment, chat moved), missing plan, already converted               |
-| `SimulatePaymentFailureActionTest` / `SimulatePaymentSuccessActionTest` | Failure recovery flow, success payment at plan price                                                                           |
-| `SendFilterReminderActionTest`                                          | Button and flow reminder, message text and date, missing date                                                                  |
-| `CustomerHistoryControllerTest`                                         | History on Account, Case and new Lead                                                                                          |
-| `DemoResetActionTest`                                                   | Somchai reset, LINE customers, converted lead comes back as a Lead, open lead trimmed, safe to run twice                       |
+| Test class                                                              | Covers                                                                                                                                               |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LineWebhookHandlerTest`                                                | Signature check, new friend → Lead, Account wins over Lead, earlier messages attached, placeholder name and rename, redelivery                       |
+| `NoritzLineChatControllerTest`                                          | Chat on Account, Lead and Case; send and failed send; validation; templates                                                                          |
+| `LineMessagingServiceTest`                                              | Name greeting, LINE unreachable                                                                                                                      |
+| `SendCheckoutLinkActionTest`                                            | Contract and Lead checkout link, LINE rejection, not linked, missing plan or subscription                                                            |
+| `LeadConversionServiceTest`                                             | First payment converts the Lead (Person Account, contract, payment, chat moved), missing plan, already converted                                     |
+| `SimulatePaymentFailureActionTest` / `SimulatePaymentSuccessActionTest` | Failure recovery flow, success payment at plan price                                                                                                 |
+| `SendFilterReminderActionTest`                                          | Button and flow reminder, message text and date, missing date                                                                                        |
+| `CustomerHistoryControllerTest`                                         | History on Account, Case and new Lead                                                                                                                |
+| `DemoResetActionTest`                                                   | Somchai reset, LINE customers, converted customer deleted and back as a fresh Lead, the button opens that Lead, open lead cleared, safe to run twice |
 
 ## 2. Before the manual run
 
 1. Log in to the org (alias `noritz`) and open App Launcher → **Service Console**.
 2. Check your user has the **LINE Chat User** permission set.
-3. Open contract **00000101** (Somchai) and click **Reset Demo**. Expect a green "Demo reset" toast, then the page reloads.
+3. Open Somchai's Account (or any Lead or contract) and click **Reset Demo**. Expect a green "Demo reset" toast, then the page reloads.
 4. On a phone, open the NORITZ LINE Official Account chat.
 5. If anything was deployed today, reload the Salesforce page twice.
 
@@ -106,13 +106,13 @@ Use a LINE account that isn't linked to any Account or Lead yet (or block and re
 
 ### I. Reset
 
-| Step                                    | Expected                                                                                                                                                  |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| I1. Somchai's contract → **Reset Demo** | Toast, then the page reloads. No LINE messages arrive on the phone                                                                                        |
-| I2. Somchai                             | Active, 2 successful payments, 3 starting chat messages                                                                                                   |
-| I3. The customer converted in D         | Renamed **Archived - <name>**, LINE User ID empty                                                                                                         |
-| I4. Leads                               | A fresh Lead with the same name, LINE account and plan, Status **Open - Not Contacted**, chat showing only "[Added the OA as a friend]". Repeat C–D on it |
-| I5. Click Reset Demo again              | Same result (safe to repeat)                                                                                                                              |
+| Step                                                            | Expected                                                                                                                                                                                                              |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I1. **Reset Demo** on the converted customer's Account (from D) | Toast, then the fresh Lead that replaces them opens. No LINE messages arrive on the phone. On any other page the page just reloads                                                                                    |
+| I2. Somchai                                                     | Active, 2 successful payments, 3 starting chat messages                                                                                                                                                               |
+| I3. The customer converted in D                                 | Gone, with their contract, payments, purifier and chat (search doesn't find them)                                                                                                                                     |
+| I4. Leads                                                       | A fresh Lead with the same name and LINE account, **no plan and no Stripe Sub ID**, Status **Open - Not Contacted**, chat showing only "[Added the OA as a friend]". Other LINE leads look the same. Repeat C–D on it |
+| I5. Click Reset Demo again                                      | Same result (safe to repeat)                                                                                                                                                                                          |
 
 ## 4. If a step fails
 

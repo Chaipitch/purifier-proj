@@ -227,6 +227,9 @@
                             <value>Edit</value>
                         </valueListItems>
                         <valueListItems>
+                            <value>Account.Reset_Demo</value>
+                        </valueListItems>
+                        <valueListItems>
                             <value>CallHighlightAction</value>
                         </valueListItems>
                         <valueListItems>

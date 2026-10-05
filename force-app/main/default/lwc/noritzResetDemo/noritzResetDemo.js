@@ -1,10 +1,11 @@
 import { LightningElement, api } from "lwc";
+import { NavigationMixin } from "lightning/navigation";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
-import reset from "@salesforce/apex/DemoResetAction.reset";
+import resetFrom from "@salesforce/apex/DemoResetAction.resetFrom";
 
 const RELOAD_DELAY_MS = 1500;
 
-export default class NoritzResetDemo extends LightningElement {
+export default class NoritzResetDemo extends NavigationMixin(LightningElement) {
   @api recordId;
   isExecuting = false;
 
@@ -14,15 +15,28 @@ export default class NoritzResetDemo extends LightningElement {
     }
     this.isExecuting = true;
     try {
-      await reset();
+      // Set when this page's record was a converted customer the reset removed: open the
+      // fresh lead that replaces it instead of reloading a deleted record.
+      const replacement = await resetFrom({ recordId: this.recordId });
       this.toast(
         "Demo reset",
-        "LINE customers are back to the start. Reloading the page.",
+        replacement
+          ? "LINE customers are back to the start. Opening the fresh lead."
+          : "LINE customers are back to the start. Reloading the page.",
         "success"
       );
-      // Standard related lists (payments) aren't pushed live, so reload everything.
       // eslint-disable-next-line @lwc/lwc/no-async-operation
-      setTimeout(() => window.location.reload(), RELOAD_DELAY_MS);
+      setTimeout(() => {
+        if (replacement) {
+          this[NavigationMixin.Navigate]({
+            type: "standard__recordPage",
+            attributes: { recordId: replacement, actionName: "view" }
+          });
+        } else {
+          // Standard related lists (payments) aren't pushed live, so reload everything.
+          window.location.reload();
+        }
+      }, RELOAD_DELAY_MS);
     } catch (error) {
       this.isExecuting = false;
       this.toast(

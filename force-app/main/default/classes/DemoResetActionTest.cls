@@ -287,14 +287,25 @@ private class DemoResetActionTest {
     DemoResetAction.reset();
     Test.stopTest();
 
-    Account archived = [
-      SELECT LastName, LINE_User_ID__c, Converted_From_LINE_Lead__c
+    // Deleted with its contracts, products and chat. If the org refuses to delete the account,
+    // it must at least be archived and unlinked from LINE.
+    List<Account> left = [
+      SELECT LastName, LINE_User_ID__c
       FROM Account
       WHERE Id = :accountId
     ];
-    Assert.areEqual('Archived - Jaidee', archived.LastName);
-    Assert.isNull(archived.LINE_User_ID__c);
-    Assert.isFalse(archived.Converted_From_LINE_Lead__c);
+    if (!left.isEmpty()) {
+      Assert.areEqual('Archived - Jaidee', left[0].LastName);
+      Assert.isNull(left[0].LINE_User_ID__c);
+    }
+    Assert.areEqual(
+      0,
+      [SELECT COUNT() FROM Contracts__c WHERE Account__c = :accountId]
+    );
+    Assert.areEqual(
+      0,
+      [SELECT COUNT() FROM LINE_Message__c WHERE Account__c = :accountId]
+    );
 
     Lead fresh = [
       SELECT FirstName, LastName, Subscription_Plan__c, IsConverted, Status
@@ -303,7 +314,8 @@ private class DemoResetActionTest {
     ];
     Assert.areEqual('Somying', fresh.FirstName);
     Assert.areEqual('Jaidee', fresh.LastName);
-    Assert.areEqual('Standard (900 THB)', fresh.Subscription_Plan__c);
+    Assert.isNull(fresh.Subscription_Plan__c, 'A fresh lead has no plan yet');
+    Assert.areEqual('Open - Not Contacted', fresh.Status);
     Assert.isFalse(fresh.IsConverted);
     Assert.areEqual(
       1,
@@ -315,14 +327,59 @@ private class DemoResetActionTest {
     );
   }
 
+  // The button pressed on a converted customer's page (or its contract) opens the fresh lead.
   @IsTest
-  static void openLineLeadChatIsTrimmed() {
+  static void buttonOnAConvertedCustomerOpensTheFreshLead() {
+    Lead l = new Lead(
+      FirstName = 'Somying',
+      LastName = 'Jaidee',
+      LINE_User_ID__c = 'U_conv',
+      Subscription_Plan__c = 'Standard (900 THB)'
+    );
+    insert l;
+    Test.setMock(HttpCalloutMock.class, new LineCalloutMock());
+    Id accountId = LeadConversionService.convertOnFirstPayment(l.Id);
+    Id contractId = [SELECT Id FROM Contracts__c WHERE Account__c = :accountId]
+    .Id;
+
+    Test.startTest();
+    Id opened = DemoResetAction.resetFrom(contractId);
+    Test.stopTest();
+
+    Assert.areEqual(
+      [
+        SELECT Id
+        FROM Lead
+        WHERE LINE_User_ID__c = 'U_conv' AND IsConverted = FALSE
+      ]
+      .Id,
+      opened
+    );
+  }
+
+  @IsTest
+  static void buttonOnSomchaiReloadsTheSamePage() {
+    Id somchaiId = [SELECT Id FROM Account WHERE Name = 'Somchai Sukhumvit'].Id;
+
+    Assert.isNull(DemoResetAction.resetFrom(somchaiId));
+  }
+
+  @IsTest
+  static void openLineLeadIsLikeANewFriendAgain() {
     Lead l = new Lead(
       LastName = 'Chatty',
       LINE_User_ID__c = 'U_chatty',
-      Status = 'Working - Contacted'
+      Status = 'Working - Contacted',
+      Subscription_Plan__c = 'Premium (1,500 THB)',
+      Stripe_Sub_ID__c = 'sub_demo_chatty'
     );
     insert l;
+    insert new Contracts__c(
+      Lead__c = l.Id,
+      Status__c = 'Pending Payment',
+      Subscription_Plan__c = 'Premium (1,500 THB)'
+    );
+    insert new Assets__c(Name = 'NORITZ Pure Water X1', Lead__c = l.Id);
     insert new List<LINE_Message__c>{
       new LINE_Message__c(
         Lead__c = l.Id,
@@ -342,9 +399,18 @@ private class DemoResetActionTest {
       1,
       [SELECT COUNT() FROM LINE_Message__c WHERE Lead__c = :l.Id]
     );
+    Lead saved = [
+      SELECT Status, Subscription_Plan__c, Stripe_Sub_ID__c
+      FROM Lead
+      WHERE Id = :l.Id
+    ];
+    Assert.areEqual('Open - Not Contacted', saved.Status);
+    Assert.isNull(saved.Subscription_Plan__c);
+    Assert.isNull(saved.Stripe_Sub_ID__c);
     Assert.areEqual(
-      'Open - Not Contacted',
-      [SELECT Status FROM Lead WHERE Id = :l.Id].Status
+      0,
+      [SELECT COUNT() FROM Contracts__c WHERE Lead__c = :l.Id]
     );
+    Assert.areEqual(0, [SELECT COUNT() FROM Assets__c WHERE Lead__c = :l.Id]);
   }
 }
