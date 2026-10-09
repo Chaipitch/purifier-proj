@@ -6,14 +6,14 @@ Everything the next person needs to run, change and support the demo. For a clic
 
 ## 1. Where things are
 
-| What             | Where                                                                                                                                        |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Salesforce org   | Developer Edition, CLI alias `noritz`: `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce.com`                                         |
-| App              | App Launcher → **Service Console**                                                                                                           |
-| Demo customer    | **Somchai Sukhumvit**, Premium contract `sub_demo_12345` (custom `Contracts__c`; Reset Demo creates it if missing)                           |
-| LINE webhook URL | `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce-sites.com/line/services/apexrest/line/webhook`                                      |
-| Source           | `force-app/main/default` (SFDX). Git remotes: `origin` → github.com/wchaipitch-ts/noritz-ts, `purifier` → github.com/Chaipitch/purifier-proj |
-| Docs             | `docs/` (this folder) and `IMPLEMENTATION_PLAN.md` (round-1 tracker, run-book and decisions)                                                 |
+| What             | Where                                                                                                                                                |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Salesforce org   | Developer Edition, CLI alias `noritz`: `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce.com`                                                 |
+| App              | App Launcher → **Service Console**                                                                                                                   |
+| Demo customer    | **Somchai Sukhumvit**, Premium contract `sub_demo_12345` (custom `Contracts__c`; Reset Demo creates it if missing)                                   |
+| LINE webhook URL | `https://orgfarm-28f7eccd9f-dev-ed.develop.my.salesforce-sites.com/line/services/apexrest/line/webhook`                                              |
+| Source           | `force-app/main/default` (SFDX). Git remotes: `origin` → github.com/wchaipitch-ts/noritz-ts, `purifier` → github.com/Chaipitch/purifier-proj         |
+| Docs             | `docs/` (this folder), `docs/data-model.drawio` (data model, open in draw.io) and `IMPLEMENTATION_PLAN.md` (round-1 tracker, run-book and decisions) |
 
 ## 2. How it works
 
