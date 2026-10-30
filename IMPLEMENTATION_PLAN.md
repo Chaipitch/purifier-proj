@@ -266,7 +266,7 @@ Decision: the link is sent by the agent's button, not automatically on follow, s
 
 **Decisions (2026-10-30):** the customer picks a filter slot in LINE; filter visits and repairs are always free (no charge path needed); a swapped unit keeps the same contract and end date.
 
-### Step 7 — Cancellation, removal and return [ ] ~2.25 days · draft, awaiting decisions
+### Step 7 — Cancellation, removal and return [ ] ~2.25 days
 
 **Customer view:** the customer taps **End service** on the renewal message (Step 5.6), or asks to cancel early in LINE or by phone and the agent clicks **Request Termination** → contract **Termination Requested** → if before the end date, the early-termination fee is worked out and charged to the saved card → LINE summary: last day of service, fee (if any), and time-slot buttons for the removal visit → **Removal** work order, partner booked → after the visit the agent clicks **Complete Visit** → asset **Returned**, contract **Terminated**, monthly charges stop, customer **Former Customer**, LINE "Your purifier has been collected. Thank you for using NORITZ."
 
@@ -279,11 +279,39 @@ Decision: the link is sent by the agent's button, not automatically on follow, s
 - [ ] 7.5 **Record Inspection** action on the asset; Step 4.2 reuses Ready for Reuse units first (0.5 d)
 - [ ] 7.6 Reset, tests (0.25 d)
 
+**Decisions (2026-10-30):** the early-termination fee rule lives in custom metadata (`Subscription_Setting__mdt`: rule None / Fixed / Percent of remaining months, plus amount and percent), so the client can change it without a deploy; customer status after cancellation is **Former Customer**; whether new installations reuse inspected units first is also a metadata switch (`Reuse_Returned_Units_First__c`).
+
+### Step 8 — Hand-off to swifT [ ] ~3 days · draft, awaiting decisions
+
+swifT (Toukei Thailand) keeps accounting, tax and fixed assets; it imports and exports CSV files. Salesforce sends what swifT needs and stores the numbers swifT sends back, linked by contract number, Salesforce asset id and serial number.
+
+**Salesforce → swifT (export files)**
+
+| File            | When a row is added                    | Main columns                                                                |
+| --------------- | -------------------------------------- | --------------------------------------------------------------------------- |
+| Sales orders    | Lead converted (Step 3)                | contract no., customer, tax ID, address, goods code, monthly price          |
+| Payments        | every successful payment (Steps 3, 5, 7) | contract no., amount, date, method, Krungsri transaction id, charge type (Service = monthly fee, VAT due on payment) |
+| Fixed assets    | installation complete (Step 4)         | Salesforce asset id, serial no., goods code, acquisition value, in-use date, location |
+| Partner payments | visit completed (Steps 4, 6, 7)       | partner, tax ID, visit type, standard fee, withholding tax 3%               |
+| Asset changes   | unit returned or disposed (Steps 6, 7) | Salesforce asset id, serial no., new status, date                           |
+
+**swifT → Salesforce (import file):** shipment status (replaces the manual button in 4.4), tax invoice and receipt numbers per payment, fixed asset number per asset.
+
+- [ ] 8.1 Fields and metadata: goods code per plan, standard partner fee per visit type, WHT rate 3%, `swifT_Customer_Code__c`, `swifT_Order_No__c`, `swifT_Receipt_No__c`, `swifT_Tax_Invoice_No__c`, `Fixed_Asset_Number__c`, `Exported_To_swifT__c` on each exported record (0.5 d)
+- [ ] 8.2 Export engine: one Apex class that writes each file from a column layout held in custom metadata (so it can match Toukei's format without code), marks rows as exported so nothing is sent twice; **Export to swifT** button plus an optional daily job; files saved on a **swifT Exchange** record (0.75 d)
+- [ ] 8.3 The five exports above (0.5 d)
+- [ ] 8.4 Import: upload swifT's reply CSV → shipment status, invoice and receipt numbers, fixed asset numbers written back; a **Simulate swifT reply** button for the demo (0.75 d)
+- [ ] 8.5 swifT Exchange page listing files and row counts; reset; tests (0.5 d)
+
 **Decisions needed**
 
-1. Early-termination fee rule: none, a fixed amount, or a share of the remaining months (e.g. 50% of the months left)?
-2. Customer status after cancellation: **Former Customer** OK?
-3. New installations reuse inspected units first (recommended), or always ship a new unit?
+1. File transfer: the agent downloads the files and imports them into swifT by hand (recommended for now, matches swifT's CSV import), or an automated transfer (SFTP or API, needs Toukei; later)?
+2. Standard partner fee per visit type (Installation, Filter, Repair, Removal): amounts, or placeholders in metadata for now?
+3. File layouts: wait for Toukei's import format, or start with our own layout (changeable in metadata) and align later?
+
+### Round 3 total
+
+Step 1 built · Step 2 ~2 d · Step 3 ~2.5 d · Step 4 ~3 d · Step 5 ~2.75 d · Step 6 ~2.5 d · Step 7 ~2.25 d · Step 8 ~3 d · **about 18 working days**, plus rehearsal and documentation.
 
 ---
 
