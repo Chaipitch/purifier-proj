@@ -237,7 +237,7 @@ Decision: the link is sent by the agent's button, not automatically on follow, s
 
 **Decisions (2026-10-30):** the agent records the completion report on the partner's behalf; monthly billing starts on the **1st of the month after installation**; filter interval **6 months**, held in custom metadata so it can change without a deploy (demo data keeps "due in 14 days").
 
-### Step 5 — Monthly billing and failed payments [ ] ~2 days · draft, awaiting decisions
+### Step 5 — Monthly billing, failed payments and renewal [ ] ~2.75 days
 
 **Customer view:** on the 1st of each month Krungsri charges the saved card → the result is posted to Salesforce → **paid:** LINE "We've received 1,500 THB for your December subscription. Thank you!" → **failed:** the existing recovery runs (contract Payment Failed, customer Payment Suspended, bold red row, retry message) → the customer taps the retry link, which opens the mock payment page in **update card** mode → the new card is saved and charged at once → contract and customer back to Active, LINE "Payment received, your service continues".
 
@@ -248,12 +248,27 @@ Decision: the link is sent by the agent's button, not automatically on follow, s
 - [ ] 5.3 Paid: `Payment_History__c` row with method and transaction id, `Next_Billing_Date__c` moves to the next 1st, LINE "payment received" message (0.25 d)
 - [ ] 5.4 Failed: reuse `Payment_Failure_Recovery`; retry link opens the mock payment page in update-card mode; new card token saved and charged immediately → `Payment_Success_Recovery` (0.5 d)
 - [ ] 5.5 Rewire **Simulate Payment Success / Failure** through the payment endpoint; reset; tests (0.5 d)
+- [ ] 5.6 Renewal choice: a daily flow sends a LINE message `Renewal_Notice_Days__c` (custom metadata, default 30) before `Contract_End_Date__c`, with three quick-reply buttons: **Renew 12 months**, **Continue monthly**, **End service**. The LINE webhook learns `postback` events (shared with Step 6 booking). Renew → end date + 12 months, `Number_of_Payments__c` + 12; Continue monthly → `Renewal_Type__c` = Month-to-month; End service → contract **Termination Requested** → Step 7. Agent gets a bell notification. No answer: a second reminder 7 days before the end, then the contract continues monthly so service never stops (assumption, confirm with the client). New fields `Renewal_Type__c`, `Renewal_Notice_Sent__c` (0.75 d)
+
+**Decisions (2026-10-30):** Krungsri runs the recurring schedule and Salesforce only records the results; the sign-up payment is month 1 of 12, no proration; before the term ends the subscriber gets a LINE notification and chooses to renew, continue monthly or end.
+
+### Step 6 — Filter care and repairs [ ] ~2.5 days · draft, awaiting decisions
+
+**Customer view, filter:** the existing filter reminder now ends with three time-slot buttons ("Tue 18 Nov morning", …) → the customer taps one → a **Filter** work order is created for that slot → the agent assigns a partner (Step 4 **Book** action) → after the visit the agent clicks **Complete Visit** → next filter date = visit date + 6 months, LINE "Your filter has been replaced. Next replacement: May 2027".
+
+**Customer view, repair:** the customer reports a problem in LINE or by phone → the agent opens a Case (already built) → **Create Repair Visit** on the Case → **Repair** work order, asset **Under Repair** → after the visit the agent records the outcome: **Repaired**, or **Unit swapped** (new serial number: old asset → Returned and on to Step 7 inspection, new asset → In Use on the same contract) → Case closes, LINE "Your purifier has been repaired".
+
+- [ ] 6.1 Filter reminder with time-slot quick replies (postback, shared with 5.6) → Filter work order; uses the existing `Filter_Booking` chat template (0.5 d)
+- [ ] 6.2 Reuse **Book** and **Complete Visit** for Filter visits; completion resets the filter date from the metadata interval and sends the LINE message (0.5 d)
+- [ ] 6.3 Case gets an `Asset__c` lookup; **Create Repair Visit** action → Repair work order, asset Under Repair (0.25 d)
+- [ ] 6.4 Repair outcome: Repaired or Unit swapped (new asset record, old one Returned, contract relinked); close the Case; LINE message (0.75 d)
+- [ ] 6.5 Customer History card lists visits; reset; tests (0.5 d)
 
 **Decisions needed**
 
-1. Krungsri runs the schedule and Salesforce only records results (recommended), or Salesforce decides who to charge each month?
-2. The first payment is taken at sign-up but billing starts the 1st after installation: no proration, the first payment simply counts as month 1 of 12?
-3. After 12 months: renew automatically month to month, or end the contract (and start the Step 7 removal)?
+1. Filter booking: the customer picks a slot in LINE (recommended), or the agent phones to arrange it?
+2. Are filter visits and repairs always free under the subscription, or can some be charged (e.g. damage by the customer)?
+3. A swapped unit keeps the same contract and end date (recommended), or restarts a new 12-month term?
 
 ---
 
