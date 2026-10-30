@@ -217,7 +217,7 @@ Decision: the link is sent by the agent's button, not automatically on follow, s
 
 **Decisions (2026-10-30):** clickable mock payment page on the phone; no initial fee, the first payment is the first month (Standard 900 / Premium 1,500 THB); new customer status **Awaiting Installation** between payment and installation.
 
-### Step 4 — Shipping and installation [ ] ~3 days · draft, awaiting decisions
+### Step 4 — Shipping and installation [ ] ~3 days
 
 **Customer view:** the payment converts the Lead → an **Installation** work order is created automatically with the customer's preferred date → the agent picks the installation partner and confirms the date → LINE: "Your installation is booked for 12 Nov 2026, 10:00, with Siam Water Service" → the unit ships to the partner → the partner installs it and reports back (photos, serial number, customer confirmation) → the agent clicks **Complete Installation** → within ~2 s, no refresh: asset **In Use**, contract **Active**, customer **Active**, filter date set, and LINE: "Your NORITZ purifier is installed. Next billing: 1 Dec 2026".
 
@@ -232,14 +232,28 @@ Decision: the link is sent by the agent's button, not automatically on follow, s
 - [ ] 4.3 **Book Installation** action: choose partner and date → LINE booking message to the customer (0.25 d)
 - [ ] 4.4 Shipment status on the work order (set by hand or a mock "swifT shipped" button for now; the real swifT file comes in a later step) → asset At Partner (0.25 d)
 - [ ] 4.5 **Complete Installation** action (LWC): serial number, photo upload, customer confirmed tick box, feedback (0.75 d)
-- [ ] 4.6 Installation-complete automation: asset In Use with serial and install date, `Next_Filter_Replacement__c` set, contract Active, customer Active, LINE message, live refresh (0.5 d)
+- [ ] 4.6 Installation-complete automation: asset In Use with serial and install date, `Next_Filter_Replacement__c` = install date + filter interval, contract Active with `Next_Billing_Date__c` = 1st of the month after installation, customer Active, LINE message, live refresh. Filter interval read from new custom metadata `Subscription_Setting__mdt.Filter_Interval_Months__c` (default 6) (0.5 d)
 - [ ] 4.7 Partner demo data, reset (Somchai stays fully installed so Scenario 2 still works), tests (0.25 d)
+
+**Decisions (2026-10-30):** the agent records the completion report on the partner's behalf; monthly billing starts on the **1st of the month after installation**; filter interval **6 months**, held in custom metadata so it can change without a deploy (demo data keeps "due in 14 days").
+
+### Step 5 — Monthly billing and failed payments [ ] ~2 days · draft, awaiting decisions
+
+**Customer view:** on the 1st of each month Krungsri charges the saved card → the result is posted to Salesforce → **paid:** LINE "We've received 1,500 THB for your December subscription. Thank you!" → **failed:** the existing recovery runs (contract Payment Failed, customer Payment Suspended, bold red row, retry message) → the customer taps the retry link, which opens the mock payment page in **update card** mode → the new card is saved and charged at once → contract and customer back to Active, LINE "Payment received, your service continues".
+
+**Approach (recommended):** Krungsri runs the recurring schedule in its own portal; Salesforce only records the results it posts back. For the demo, a mock **Krungsri billing run** plays Krungsri's part. Both the run and the existing Simulate buttons send their result through the Step 3 payment endpoint, so every path behaves the same.
+
+- [ ] 5.1 Contract fields: `Recurring_Start_Date__c`, `Number_of_Payments__c`, `Last_Payment_Date__c`, demo-only `Fail_Next_Charge__c` tick box (0.25 d)
+- [ ] 5.2 Mock billing run: a button (and an optional daily scheduled job) that charges every Active contract whose `Next_Billing_Date__c` is today or earlier, using its saved card; success unless `Fail_Next_Charge__c` is ticked (0.5 d)
+- [ ] 5.3 Paid: `Payment_History__c` row with method and transaction id, `Next_Billing_Date__c` moves to the next 1st, LINE "payment received" message (0.25 d)
+- [ ] 5.4 Failed: reuse `Payment_Failure_Recovery`; retry link opens the mock payment page in update-card mode; new card token saved and charged immediately → `Payment_Success_Recovery` (0.5 d)
+- [ ] 5.5 Rewire **Simulate Payment Success / Failure** through the payment endpoint; reset; tests (0.5 d)
 
 **Decisions needed**
 
-1. Who records the completion report: the agent on the partner's behalf (recommended, 0 d extra), or the partner themselves on a mobile form (+1.5 d)?
-2. When does monthly billing start: one month after the installation date, or the 1st of the month after installation?
-3. Filter replacement interval after installation (e.g. 6 months)? The demo data keeps "due in 14 days".
+1. Krungsri runs the schedule and Salesforce only records results (recommended), or Salesforce decides who to charge each month?
+2. The first payment is taken at sign-up but billing starts the 1st after installation: no proration, the first payment simply counts as month 1 of 12?
+3. After 12 months: renew automatically month to month, or end the contract (and start the Step 7 removal)?
 
 ---
 
