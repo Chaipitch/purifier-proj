@@ -252,7 +252,7 @@ Decision: the link is sent by the agent's button, not automatically on follow, s
 
 **Decisions (2026-10-30):** Krungsri runs the recurring schedule and Salesforce only records the results; the sign-up payment is month 1 of 12, no proration; before the term ends the subscriber gets a LINE notification and chooses to renew, continue monthly or end.
 
-### Step 6 — Filter care and repairs [ ] ~2.5 days · draft, awaiting decisions
+### Step 6 — Filter care and repairs [ ] ~2.5 days
 
 **Customer view, filter:** the existing filter reminder now ends with three time-slot buttons ("Tue 18 Nov morning", …) → the customer taps one → a **Filter** work order is created for that slot → the agent assigns a partner (Step 4 **Book** action) → after the visit the agent clicks **Complete Visit** → next filter date = visit date + 6 months, LINE "Your filter has been replaced. Next replacement: May 2027".
 
@@ -264,11 +264,26 @@ Decision: the link is sent by the agent's button, not automatically on follow, s
 - [ ] 6.4 Repair outcome: Repaired or Unit swapped (new asset record, old one Returned, contract relinked); close the Case; LINE message (0.75 d)
 - [ ] 6.5 Customer History card lists visits; reset; tests (0.5 d)
 
+**Decisions (2026-10-30):** the customer picks a filter slot in LINE; filter visits and repairs are always free (no charge path needed); a swapped unit keeps the same contract and end date.
+
+### Step 7 — Cancellation, removal and return [ ] ~2.25 days · draft, awaiting decisions
+
+**Customer view:** the customer taps **End service** on the renewal message (Step 5.6), or asks to cancel early in LINE or by phone and the agent clicks **Request Termination** → contract **Termination Requested** → if before the end date, the early-termination fee is worked out and charged to the saved card → LINE summary: last day of service, fee (if any), and time-slot buttons for the removal visit → **Removal** work order, partner booked → after the visit the agent clicks **Complete Visit** → asset **Returned**, contract **Terminated**, monthly charges stop, customer **Former Customer**, LINE "Your purifier has been collected. Thank you for using NORITZ."
+
+**Back at the warehouse:** every returned unit (from removal, or swapped out in Step 6) gets **Record Inspection** → **Ready for Reuse**, **Under Repair** or **Disposed**. New installations (Step 4.2) take a Ready for Reuse unit before a new one.
+
+- [ ] 7.1 Fields and values: contract `Termination_Requested_Date__c`, `Termination_Reason__c`, `Early_Termination_Fee__c`, `Service_End_Date__c`; contract statuses Termination Requested and Terminated; customer status Former Customer; asset statuses Returned, Inspection, Ready for Reuse, Disposed; `Inspection_Result__c`, `Inspection_Notes__c` (0.25 d)
+- [ ] 7.2 **Request Termination** action, sharing one path with the 5.6 End service button; fee rule from custom metadata; LINE summary with removal slot buttons (postback, as 6.1) (0.5 d)
+- [ ] 7.3 Fee charged through the payment endpoint with the saved card (mock) (0.25 d)
+- [ ] 7.4 Removal visit: Book and Complete Visit → asset Returned, contract Terminated, billing run skips the contract, customer Former Customer, LINE goodbye (0.5 d)
+- [ ] 7.5 **Record Inspection** action on the asset; Step 4.2 reuses Ready for Reuse units first (0.5 d)
+- [ ] 7.6 Reset, tests (0.25 d)
+
 **Decisions needed**
 
-1. Filter booking: the customer picks a slot in LINE (recommended), or the agent phones to arrange it?
-2. Are filter visits and repairs always free under the subscription, or can some be charged (e.g. damage by the customer)?
-3. A swapped unit keeps the same contract and end date (recommended), or restarts a new 12-month term?
+1. Early-termination fee rule: none, a fixed amount, or a share of the remaining months (e.g. 50% of the months left)?
+2. Customer status after cancellation: **Former Customer** OK?
+3. New installations reuse inspected units first (recommended), or always ship a new unit?
 
 ---
 
