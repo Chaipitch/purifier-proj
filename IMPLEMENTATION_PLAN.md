@@ -197,29 +197,49 @@ Steps are planned one at a time. Each step lists what the customer sees, the bui
 
 Decision: the link is sent by the agent's button, not automatically on follow, so the presenter controls the timing.
 
-### Step 3 — First payment through Krungsri (mock) [ ] ~2.5 days · draft, awaiting decisions
+### Step 3 — First payment through Krungsri (mock) [ ] ~2.5 days
 
 **Customer view:** once the Lead is Form Submitted, the agent clicks **Send payment link** (today's Send Checkout Link, renamed) → the customer gets a LINE message with a "Pay now" button → a mock payment page opens with the plan and amount, a choice of **Card** or **PromptPay QR**, and a "Save this card for monthly payments" box → the customer taps Pay → the page posts the result to Salesforce, as Krungsri's "Post URL" would → on success the Lead converts and LINE says "Payment received, we'll confirm your installation date"; on failure the Lead stays and LINE sends "Payment didn't go through" with the link again.
 
 **What changes in existing code**
 
-- `LeadConversionService.convertOnFirstPayment`: also copies the form data (address, subdistrict, tax ID, installation location, preferred date, PDPA consent) to the Person Account and the contract; the new contract ends in **Pending Installation**, not Active (Active now comes from Step 4, installation complete).
+- `LeadConversionService.convertOnFirstPayment`: also copies the form data (address, subdistrict, tax ID, installation location, preferred date, PDPA consent) to the Person Account and the contract; the new contract ends in **Pending Installation**, not Active (Active now comes from Step 4, installation complete); the customer ends in **Awaiting Installation**, not Active. The first payment is the first month's fee only (no initial fee).
 - `Payment_Success_Recovery` flow: a first payment must not set the contract to Active; only payments on an installed contract do.
 - `SendCheckoutLinkAction`: mock Krungsri URL instead of `checkout.stripe.com/demo/`; only allowed when the Lead is Form Submitted.
 - `Stripe_Sub_ID__c` (Lead and `Contracts__c`) is replaced by a new `Payment_Reference__c`. Salesforce cannot rename an API name, so the new field is added, data copied, and every reference switched (4 classes, 2 quick actions, tests, reset, CLAUDE.md) before the old field is retired.
 - **Simulate Payment Success** stays as the on-stage backup.
 
-- [ ] 3.1 Fields: `Payment_Reference__c` (Lead, `Contracts__c`); on `Contracts__c` `Payment_Method__c` (Card, Saved Card, PromptPay QR), `Card_Token_Ref__c` and `Card_Last4__c` (mock values only, never card data), `Billing_Frequency__c` (Monthly); on `Payment_History__c` `Payment_Method__c` and `Gateway_Transaction_ID__c`; `Contracts__c.Status__c` value **Pending Installation** (0.5 d)
+- [ ] 3.1 Fields: `Payment_Reference__c` (Lead, `Contracts__c`); on `Contracts__c` `Payment_Method__c` (Card, Saved Card, PromptPay QR), `Card_Token_Ref__c` and `Card_Last4__c` (mock values only, never card data), `Billing_Frequency__c` (Monthly); on `Payment_History__c` `Payment_Method__c` and `Gateway_Transaction_ID__c`; `Contracts__c.Status__c` value **Pending Installation**; `Account.Customer_Status__c` value **Awaiting Installation** (0.5 d)
 - [ ] 3.2 Mock payment page on the Salesforce Site, clearly labelled as a demo, no bank branding, `/demo/` in the URL (0.75 d)
 - [ ] 3.3 Payment result endpoint `/services/apexrest/krungsri/payment/demo/*` (replaces the deferred Stripe webhook, Task 10): resolve by `Payment_Reference__c`, JSON error if not found, success → conversion, failure → retry message; tests for success, failure and not found. No signature check (production needs one) (0.5 d)
 - [ ] 3.4 Conversion and flow changes above, with tests (0.5 d)
 - [ ] 3.5 LINE messages for success and failure, rename Stripe references, reset script (0.25 d)
 
+**Decisions (2026-10-30):** clickable mock payment page on the phone; no initial fee, the first payment is the first month (Standard 900 / Premium 1,500 THB); new customer status **Awaiting Installation** between payment and installation.
+
+### Step 4 — Shipping and installation [ ] ~3 days · draft, awaiting decisions
+
+**Customer view:** the payment converts the Lead → an **Installation** work order is created automatically with the customer's preferred date → the agent picks the installation partner and confirms the date → LINE: "Your installation is booked for 12 Nov 2026, 10:00, with Siam Water Service" → the unit ships to the partner → the partner installs it and reports back (photos, serial number, customer confirmation) → the agent clicks **Complete Installation** → within ~2 s, no refresh: asset **In Use**, contract **Active**, customer **Active**, filter date set, and LINE: "Your NORITZ purifier is installed. Next billing: 1 Dec 2026".
+
+**Objects**
+
+- **Installation partner:** a Business Account with record type **Installation Partner** (Person Accounts stay on for customers). Fields: contact, service area, tax ID (later for partner payments).
+- **Work order:** standard `WorkOrder` if it is enabled in the org (verify first), otherwise a custom `Work_Order__c`. New fields: `Work_Type__c` (Installation, Filter, Repair, Removal — later steps reuse it), `Partner__c`, `Contract__c`, `Asset__c`, `Scheduled_Date__c`, `Shipment_Status__c` (Not Shipped, Shipped to Partner, Received by Partner), `Serial_Number__c`, `Customer_Confirmed__c`, `Completed_Date__c`, `Partner_Feedback__c`. Photos are Files on the work order.
+- **Asset status:** add **In Warehouse** and **At Partner**; relabel **Installed** as **In Use**; retire **Purchased** later (the company keeps ownership, nothing is sold). `Assets__c` gets a `Contract__c` lookup.
+
+- [ ] 4.1 Partner record type, work order object and fields, asset status values, `Assets__c.Contract__c`, layouts (0.5 d)
+- [ ] 4.2 On conversion: create the Installation work order (preferred date from the form) and an `Assets__c` record (In Warehouse, no serial yet) linked to the contract (0.5 d)
+- [ ] 4.3 **Book Installation** action: choose partner and date → LINE booking message to the customer (0.25 d)
+- [ ] 4.4 Shipment status on the work order (set by hand or a mock "swifT shipped" button for now; the real swifT file comes in a later step) → asset At Partner (0.25 d)
+- [ ] 4.5 **Complete Installation** action (LWC): serial number, photo upload, customer confirmed tick box, feedback (0.75 d)
+- [ ] 4.6 Installation-complete automation: asset In Use with serial and install date, `Next_Filter_Replacement__c` set, contract Active, customer Active, LINE message, live refresh (0.5 d)
+- [ ] 4.7 Partner demo data, reset (Somchai stays fully installed so Scenario 2 still works), tests (0.25 d)
+
 **Decisions needed**
 
-1. Clickable mock payment page on the phone (recommended, the audience sees a real tap-to-pay), or keep only the Simulate buttons?
-2. Is there an **initial fee** on top of the first month? If yes, how much per plan?
-3. Customer status after payment and before installation: add **Awaiting Installation** to `Customer_Status__c`, or keep **Active**?
+1. Who records the completion report: the agent on the partner's behalf (recommended, 0 d extra), or the partner themselves on a mobile form (+1.5 d)?
+2. When does monthly billing start: one month after the installation date, or the 1st of the month after installation?
+3. Filter replacement interval after installation (e.g. 6 months)? The demo data keeps "due in 14 days".
 
 ---
 
