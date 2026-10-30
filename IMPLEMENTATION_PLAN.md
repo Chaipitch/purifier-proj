@@ -281,7 +281,7 @@ Decision: the link is sent by the agent's button, not automatically on follow, s
 
 **Decisions (2026-10-30):** the early-termination fee rule lives in custom metadata (`Subscription_Setting__mdt`: rule None / Fixed / Percent of remaining months, plus amount and percent), so the client can change it without a deploy; customer status after cancellation is **Former Customer**; whether new installations reuse inspected units first is also a metadata switch (`Reuse_Returned_Units_First__c`).
 
-### Step 8 — Hand-off to swifT [ ] ~3 days · draft, awaiting decisions
+### Step 8 — Hand-off to swifT [ ] ~3 days
 
 swifT (Toukei Thailand) keeps accounting, tax and fixed assets; it imports and exports CSV files. Salesforce sends what swifT needs and stores the numbers swifT sends back, linked by contract number, Salesforce asset id and serial number.
 
@@ -303,11 +303,7 @@ swifT (Toukei Thailand) keeps accounting, tax and fixed assets; it imports and e
 - [ ] 8.4 Import: upload swifT's reply CSV → shipment status, invoice and receipt numbers, fixed asset numbers written back; a **Simulate swifT reply** button for the demo (0.75 d)
 - [ ] 8.5 swifT Exchange page listing files and row counts; reset; tests (0.5 d)
 
-**Decisions needed**
-
-1. File transfer: the agent downloads the files and imports them into swifT by hand (recommended for now, matches swifT's CSV import), or an automated transfer (SFTP or API, needs Toukei; later)?
-2. Standard partner fee per visit type (Installation, Filter, Repair, Removal): amounts, or placeholders in metadata for now?
-3. File layouts: wait for Toukei's import format, or start with our own layout (changeable in metadata) and align later?
+**Decisions (2026-10-30):** files are moved by hand (agent downloads from Salesforce, imports into swifT; automated SFTP/API is a later phase with Toukei); partner fees per visit type are placeholders in metadata until the client gives real amounts; we start with our own file layouts, held in metadata, and align with Toukei's import format later.
 
 ### Round 3 total
 
