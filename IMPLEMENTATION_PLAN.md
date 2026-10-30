@@ -1,7 +1,7 @@
 # NORITZ Demo — Implementation Tracker
 
 Target org: `noritz` (Developer Edition, `orgfarm-28f7eccd9f-dev-ed`)
-Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.png) · Last updated: 2026-10-01
+Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.png) · Last updated: 2026-10-30
 
 **Round 2 (2026-10-01):** LINE leads, conversion on first payment, chat templates, filter reminders, customer history, chat on Lead/Case. See [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md), [docs/CHANGES.md](docs/CHANGES.md), [docs/HANDOFF.md](docs/HANDOFF.md) and [docs/TESTING.md](docs/TESTING.md). Where this file and docs/ disagree, docs/ is newer.
 
@@ -152,6 +152,77 @@ Click **Reset Demo** on the Contract tab. The page reloads after the green toast
 
 ---
 
+## Round 3 — full business flow, step by step (planned 2026-10-30)
+
+Source documents: *Subscription Business: Operational Overview*, the Krungsri *Merchant Acquiring Services* proposal (2026-05-05) and the Toukei *swifT* introduction. Krungsri is the payment gateway; swifT (Toukei Thailand) is the core accounting system. Overview diagram: the "NORITZ Subscription Flow" artifact.
+
+Steps are planned one at a time. Each step lists what the customer sees, the build tasks and its estimate.
+
+### Step 1 — Customer adds the LINE OA ✅ already built
+
+- [x] LINE `follow` event creates a Lead named after the LINE display name, with `LINE_User_ID__c` and Lead Source = LINE (`LineWebhookHandler.createLeads`).
+- [x] A LINE user who is already a customer gets no new Lead; their messages go to the Account.
+- [x] Every message is saved as `LINE_Message__c` and shown in the chat widget on the Lead page.
+
+### Step 2 — Sign-up form inside LINE (LIFF) [ ] ~2 days
+
+**Customer view:** agent clicks **Send sign-up form** on the Lead → customer gets a LINE message with a "Complete your sign-up" button → the form opens inside LINE (LIFF, Full size) → on submit the panel closes and a "Thanks, we've received your details" bubble appears → Lead Status becomes **Form Submitted** and the agent gets a bell notification.
+
+**Identity:** the form sends the LIFF ID token to Apex, which verifies it with LINE (`https://api.line.me/oauth2/v2.1/verify`) to get the LINE user id, then finds the open Lead by `LINE_User_ID__c`. No per-Lead link or token field.
+
+**Needed from the user (LINE Developers):** a LINE Login channel under the **same provider** as the Messaging API channel (otherwise the user ids differ); a LIFF app in it (size Full, scopes `profile` + `openid`, endpoint = the form page URL we provide); then send us the LIFF ID and the Login channel ID.
+
+| Field                         | Required | Lead field                                                  |
+| ----------------------------- | -------- | ----------------------------------------------------------- |
+| First / last name             | yes      | `FirstName`, `LastName`                                     |
+| Mobile                        | yes      | `MobilePhone`                                               |
+| Email                         | no       | `Email`                                                     |
+| House no. and street          | yes      | `Street`                                                    |
+| Subdistrict                   | yes      | new `Subdistrict__c`                                        |
+| District                      | yes      | `City`                                                      |
+| Province                      | yes      | `State`                                                     |
+| Postcode                      | yes      | `PostalCode`                                                |
+| Where in the home             | yes      | new `Installation_Location__c` (Kitchen, Living room, Other) |
+| Preferred installation date   | yes      | new `Preferred_Install_Date__c`                             |
+| Plan                          | yes      | existing `Subscription_Plan__c`                             |
+| Tax ID (13 digits)            | **no**   | new `Tax_ID__c`, digit check only when filled               |
+| Billing address               | no       | "Same as installation" box, or new billing address fields   |
+| PDPA consent                  | yes      | new `PDPA_Consent__c` + `PDPA_Consent_Date__c`              |
+
+- [ ] 2.1 New Lead fields, Lead Status value "Form Submitted", Lead layout (0.25 d)
+- [ ] 2.2 Form page on the existing Salesforce Site with the LIFF SDK, Thai/English labels, phone-first layout (0.75 d)
+- [ ] 2.3 Guest-safe Apex: verify the LIFF ID token, update the Lead, post the thank-you message; tests (0.5 d)
+- [ ] 2.4 **Send sign-up form** button on the Lead (LINE message with the LIFF link) (0.25 d)
+- [ ] 2.5 Reset puts the demo Lead back to "not yet submitted" (0.1 d)
+
+Decision: the link is sent by the agent's button, not automatically on follow, so the presenter controls the timing.
+
+### Step 3 — First payment through Krungsri (mock) [ ] ~2.5 days · draft, awaiting decisions
+
+**Customer view:** once the Lead is Form Submitted, the agent clicks **Send payment link** (today's Send Checkout Link, renamed) → the customer gets a LINE message with a "Pay now" button → a mock payment page opens with the plan and amount, a choice of **Card** or **PromptPay QR**, and a "Save this card for monthly payments" box → the customer taps Pay → the page posts the result to Salesforce, as Krungsri's "Post URL" would → on success the Lead converts and LINE says "Payment received, we'll confirm your installation date"; on failure the Lead stays and LINE sends "Payment didn't go through" with the link again.
+
+**What changes in existing code**
+
+- `LeadConversionService.convertOnFirstPayment`: also copies the form data (address, subdistrict, tax ID, installation location, preferred date, PDPA consent) to the Person Account and the contract; the new contract ends in **Pending Installation**, not Active (Active now comes from Step 4, installation complete).
+- `Payment_Success_Recovery` flow: a first payment must not set the contract to Active; only payments on an installed contract do.
+- `SendCheckoutLinkAction`: mock Krungsri URL instead of `checkout.stripe.com/demo/`; only allowed when the Lead is Form Submitted.
+- `Stripe_Sub_ID__c` (Lead and `Contracts__c`) is replaced by a new `Payment_Reference__c`. Salesforce cannot rename an API name, so the new field is added, data copied, and every reference switched (4 classes, 2 quick actions, tests, reset, CLAUDE.md) before the old field is retired.
+- **Simulate Payment Success** stays as the on-stage backup.
+
+- [ ] 3.1 Fields: `Payment_Reference__c` (Lead, `Contracts__c`); on `Contracts__c` `Payment_Method__c` (Card, Saved Card, PromptPay QR), `Card_Token_Ref__c` and `Card_Last4__c` (mock values only, never card data), `Billing_Frequency__c` (Monthly); on `Payment_History__c` `Payment_Method__c` and `Gateway_Transaction_ID__c`; `Contracts__c.Status__c` value **Pending Installation** (0.5 d)
+- [ ] 3.2 Mock payment page on the Salesforce Site, clearly labelled as a demo, no bank branding, `/demo/` in the URL (0.75 d)
+- [ ] 3.3 Payment result endpoint `/services/apexrest/krungsri/payment/demo/*` (replaces the deferred Stripe webhook, Task 10): resolve by `Payment_Reference__c`, JSON error if not found, success → conversion, failure → retry message; tests for success, failure and not found. No signature check (production needs one) (0.5 d)
+- [ ] 3.4 Conversion and flow changes above, with tests (0.5 d)
+- [ ] 3.5 LINE messages for success and failure, rename Stripe references, reset script (0.25 d)
+
+**Decisions needed**
+
+1. Clickable mock payment page on the phone (recommended, the audience sees a real tap-to-pay), or keep only the Simulate buttons?
+2. Is there an **initial fee** on top of the first month? If yes, how much per plan?
+3. Customer status after payment and before installation: add **Awaiting Installation** to `Customer_Status__c`, or keep **Active**?
+
+---
+
 ## Remaining work
 
 ### Stripe webhook endpoint (CLAUDE.md Task 10) ⏸
@@ -261,5 +332,7 @@ Currently on the page: standard highlights (Status, plan, next filter date), Pat
 - [ ] Path stages: wireframe shows Lead → Pending → Active → Renewal; the org has Pending Payment → Active → Payment Failed. Keep the org values?
 - [ ] Right panel: three columns (current) or full-width bottom row as drawn?
 - [ ] Should the two demo buttons also sit on Somchai's Account page, so the presenter never leaves the chat?
-- [ ] Stripe or Krungsri? (mocked either way)
+- [x] Stripe or Krungsri? **Krungsri** (Merchant Acquiring proposal, 2026-05-05); still mocked for the demo. See Round 3.
+- [ ] Krungsri recurring billing is scheduled in Krungsri's own portal: does Salesforce generate monthly charges, or only record the results Krungsri posts back?
+- [ ] Initial fee on top of the first month? Amount per plan?
 - [ ] Presentation date
