@@ -1,7 +1,7 @@
 # NORITZ Demo — Implementation Tracker
 
 Target org: `noritz` (Developer Edition, `orgfarm-28f7eccd9f-dev-ed`)
-Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.png) · Last updated: 2026-10-30
+Spec: [CLAUDE.md](CLAUDE.md) · Wireframe: [docs/wireframe.png](docs/wireframe.png) · Last updated: 2026-11-06
 
 **Round 2 (2026-10-01):** LINE leads, conversion on first payment, chat templates, filter reminders, customer history, chat on Lead/Case. See [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md), [docs/CHANGES.md](docs/CHANGES.md), [docs/HANDOFF.md](docs/HANDOFF.md) and [docs/TESTING.md](docs/TESTING.md). Where this file and docs/ disagree, docs/ is newer.
 
@@ -152,164 +152,142 @@ Click **Reset Demo** on the Contract tab. The page reloads after the green toast
 
 ---
 
-## Round 3 — full business flow, step by step (planned 2026-10-30)
+## Round 3 — full business flow, step by step (updated 2026-11-06 after the GBD meeting)
 
-Source documents: *Subscription Business: Operational Overview*, the Krungsri *Merchant Acquiring Services* proposal (2026-05-05) and the Toukei *swifT* introduction. Krungsri is the payment gateway; swifT (Toukei Thailand) is the core accounting system. Overview diagram: the "NORITZ Subscription Flow" artifact.
+Source documents: _Subscription Business: Operational Overview_ (client), the Krungsri _Merchant Acquiring Services_ proposal (2026-05-05), the Toukei _swifT_ introduction, and GBD's _List of Requirements_ with the **MOM of 2026-11-06** (column I; our answers are the `[TSTH dev]` notes). Krungsri is the payment gateway; swifT (Toukei Thailand) is the core accounting system.
 
-Steps are planned one at a time. Each step lists what the customer sees, the build tasks and its estimate.
+**Where things live**
 
-### Step 1 — Customer adds the LINE OA ✅ already built
+| What                                   | Where                                                                                                                          |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Flow, 8 steps, Manual / Trigger / Scheduled tags | Web: "NORITZ Subscription Flow" artifact · draw.io: [docs/noritz-subscription.drawio](docs/noritz-subscription.drawio), pages 1–2 |
+| Data model (objects, fields, relationships) | Web: "NORITZ Data Model" artifact · draw.io: same file, page 3                                                           |
+| Estimate                                | Google Sheet "NORITZ Estimate WS V.3 – Procode", tab **V.4 – MOM 11-6** (procode 51.0 MD); tab **MOM 11-6 answers**           |
 
-- [x] LINE `follow` event creates a Lead named after the LINE display name, with `LINE_User_ID__c` and Lead Source = LINE (`LineWebhookHandler.createLeads`).
-- [x] A LINE user who is already a customer gets no new Lead; their messages go to the Account.
-- [x] Every message is saved as `LINE_Message__c` and shown in the chat widget on the Lead page.
+**Scope rules from the MOM (2026-11-06)**
 
-### Step 2 — Sign-up form inside LINE (LIFF) [ ] ~2 days
+- Contract is created by staff and sent as a PDF for sign-off; no automatic contract creation (MOM 11).
+- No Experience Cloud: partners have no login; partner communication is manual (LINE / email) and staff update the Work Order (MOM 13, 24–27).
+- Installation progress, asset registration and start of use are manual; Salesforce prepares the work order and the documents (MOM 5).
+- Work orders are created from a per-product **Work Instruction Template** (master-detail); Service Cloud only, no Field Service or Knowledge licence (MOM 5, 22).
+- swifT: Salesforce only exports CSV files (option 1, export button); swifT import, inventory allocation and storing swifT records in Salesforce are out of scope / phase 2 (MOM 15–18).
+- Quote PDF uses the standard Quote template; contract, invoice, installation instruction and shipping label are Visualforce PDFs (MOM 11, 19, 22, 33).
+- Invoices are issued by staff (button), not by an automatic monthly run (MOM 33).
+- Monthly charging uses Krungsri's subscription schedule; retry ownership and iFrame depend on the Krungsri API (MOM 34).
 
-**Customer view:** agent clicks **Send sign-up form** on the Lead → customer gets a LINE message with a "Complete your sign-up" button → the form opens inside LINE (LIFF, Full size) → on submit the panel closes and a "Thanks, we've received your details" bubble appears → Lead Status becomes **Form Submitted** and the agent gets a bell notification.
+### Step 1 — Customer adds the LINE OA ✅ built · 4.5 MD (production hardening)
 
-**Identity:** the form sends the LIFF ID token to Apex, which verifies it with LINE (`https://api.line.me/oauth2/v2.1/verify`) to get the LINE user id, then finds the open Lead by `LINE_User_ID__c`. No per-Lead link or token field.
+- [x] LINE `follow` creates a Lead (LINE display name, `LINE_User_ID__c`, Lead Source = LINE).
+- [x] Duplicate check on Lead, not Account: an existing open Lead or customer with the same LINE ID is reused (MOM 10). A standard duplicate rule covers Leads entered by hand (config).
+- [x] Every message saved as `LINE_Message__c`; chat widget on Lead, Account and Case.
 
-**Needed from the user (LINE Developers):** a LINE Login channel under the **same provider** as the Messaging API channel (otherwise the user ids differ); a LIFF app in it (size Full, scopes `profile` + `openid`, endpoint = the form page URL we provide); then send us the LIFF ID and the Login channel ID.
+### Step 2 — Sign-up form inside LINE (LIFF) [ ] 4.5 MD
 
-| Field                         | Required | Lead field                                                  |
-| ----------------------------- | -------- | ----------------------------------------------------------- |
-| First / last name             | yes      | `FirstName`, `LastName`                                     |
-| Mobile                        | yes      | `MobilePhone`                                               |
-| Email                         | no       | `Email`                                                     |
-| House no. and street          | yes      | `Street`                                                    |
-| Subdistrict                   | yes      | new `Subdistrict__c`                                        |
-| District                      | yes      | `City`                                                      |
-| Province                      | yes      | `State`                                                     |
-| Postcode                      | yes      | `PostalCode`                                                |
-| Where in the home             | yes      | new `Installation_Location__c` (Kitchen, Living room, Other) |
-| Preferred installation date   | yes      | new `Preferred_Install_Date__c`                             |
-| Plan                          | yes      | existing `Subscription_Plan__c`                             |
-| Tax ID (13 digits)            | **no**   | new `Tax_ID__c`, digit check only when filled               |
-| Billing address               | no       | "Same as installation" box, or new billing address fields   |
-| PDPA consent                  | yes      | new `PDPA_Consent__c` + `PDPA_Consent_Date__c`              |
+Agent clicks **Send sign-up form** → LINE button → form opens inside LINE (LIFF, Full) → customer submits → Lead updated, status **Form Submitted**, thank-you bubble, agent bell. Identity: the LIFF ID token is verified with LINE (`/oauth2/v2.1/verify`) and matched to the Lead by LINE user ID.
 
-- [ ] 2.1 New Lead fields, Lead Status value "Form Submitted", Lead layout (0.25 d)
-- [ ] 2.2 Form page on the existing Salesforce Site with the LIFF SDK, Thai/English labels, phone-first layout (0.75 d)
-- [ ] 2.3 Guest-safe Apex: verify the LIFF ID token, update the Lead, post the thank-you message; tests (0.5 d)
-- [ ] 2.4 **Send sign-up form** button on the Lead (LINE message with the LIFF link) (0.25 d)
-- [ ] 2.5 Reset puts the demo Lead back to "not yet submitted" (0.1 d)
+Lead fields: name, mobile, email, street, new `Subdistrict__c`, City (district), State (province), PostalCode, new `Installation_Location__c`, new `Preferred_Install_Date__c`, `Subscription_Plan__c`, new `Tax_ID__c` (**optional**, 13 digits), billing address or "same as installation", new `PDPA_Consent__c` + `PDPA_Consent_Date__c`.
 
-Decision: the link is sent by the agent's button, not automatically on follow, so the presenter controls the timing.
+- [ ] 2.1 Lead fields, status "Form Submitted", layout
+- [ ] 2.2 Form page on the Salesforce Site with the LIFF SDK, Thai / English labels
+- [ ] 2.3 Guest-safe Apex: verify the LIFF token, update the Lead, thank-you message; tests
+- [ ] 2.4 **Send sign-up form** button
+- [ ] 2.5 Reset puts the demo Lead back to "not yet submitted"
 
-### Step 3 — First payment through Krungsri (mock) [ ] ~2.5 days
+Needs from the client: a LINE Login channel under the **same provider** as the Messaging API channel, a LIFF app in it; send the LIFF ID and Login channel ID.
 
-**Customer view:** once the Lead is Form Submitted, the agent clicks **Send payment link** (today's Send Checkout Link, renamed) → the customer gets a LINE message with a "Pay now" button → a mock payment page opens with the plan and amount, a choice of **Card** or **PromptPay QR**, and a "Save this card for monthly payments" box → the customer taps Pay → the page posts the result to Salesforce, as Krungsri's "Post URL" would → on success the Lead converts and LINE says "Payment received, we'll confirm your installation date"; on failure the Lead stays and LINE sends "Payment didn't go through" with the link again.
+### Step 3 — Contract and first payment [ ] 5.0 MD + 3.0 MD notification verification
 
-**What changes in existing code**
+Staff convert the prospect (standard Convert; our code carries the LINE ID, form data and chat) → staff create the contract (`Contracts__c`, auto-number) → staff send the contract PDF and the first invoice in LINE → customer taps **I agree** (invoice status Agreed) → payment link sent automatically → customer pays on the Krungsri page (card, saved card or PromptPay QR; redirect, or iFrame if Krungsri allows) → Krungsri posts the result → **paid:** Payment History row, **Order + Order Product** created (for the swifT CSV), card token saved, contract **Pending Installation**, customer **Awaiting Installation**, LINE "payment received" → **failed:** LINE "try again" with the link.
 
-- `LeadConversionService.convertOnFirstPayment`: also copies the form data (address, subdistrict, tax ID, installation location, preferred date, PDPA consent) to the Person Account and the contract; the new contract ends in **Pending Installation**, not Active (Active now comes from Step 4, installation complete); the customer ends in **Awaiting Installation**, not Active. The first payment is the first month's fee only (no initial fee).
-- `Payment_Success_Recovery` flow: a first payment must not set the contract to Active; only payments on an installed contract do.
-- `SendCheckoutLinkAction`: mock Krungsri URL instead of `checkout.stripe.com/demo/`; only allowed when the Lead is Form Submitted.
-- `Stripe_Sub_ID__c` (Lead and `Contracts__c`) is replaced by a new `Payment_Reference__c`. Salesforce cannot rename an API name, so the new field is added, data copied, and every reference switched (4 classes, 2 quick actions, tests, reset, CLAUDE.md) before the old field is retired.
-- **Simulate Payment Success** stays as the on-stage backup.
+No initial fee: the first payment is month 1 of 12 (Standard 900 / Premium 1,500 THB).
 
-- [ ] 3.1 Fields: `Payment_Reference__c` (Lead, `Contracts__c`); on `Contracts__c` `Payment_Method__c` (Card, Saved Card, PromptPay QR), `Card_Token_Ref__c` and `Card_Last4__c` (mock values only, never card data), `Billing_Frequency__c` (Monthly); on `Payment_History__c` `Payment_Method__c` and `Gateway_Transaction_ID__c`; `Contracts__c.Status__c` value **Pending Installation**; `Account.Customer_Status__c` value **Awaiting Installation** (0.5 d)
-- [ ] 3.2 Mock payment page on the Salesforce Site, clearly labelled as a demo, no bank branding, `/demo/` in the URL (0.75 d)
-- [ ] 3.3 Payment result endpoint `/services/apexrest/krungsri/payment/demo/*` (replaces the deferred Stripe webhook, Task 10): resolve by `Payment_Reference__c`, JSON error if not found, success → conversion, failure → retry message; tests for success, failure and not found. No signature check (production needs one) (0.5 d)
-- [ ] 3.4 Conversion and flow changes above, with tests (0.5 d)
-- [ ] 3.5 LINE messages for success and failure, rename Stripe references, reset script (0.25 d)
+- [ ] 3.1 Payment fields (`Payment_Reference__c` replaces `Stripe_Sub_ID__c` on Lead and `Contracts__c`; `Payment_Method__c`, `Card_Token_Ref__c`, `Card_Last4__c`; `Payment_History__c.Gateway_Transaction_ID__c`); new statuses
+- [ ] 3.2 "I agree" step on the invoice (LINE button → postback) and automatic payment link
+- [ ] 3.3 Krungsri payment result endpoint (Post URL): resolve by `Payment_Reference__c`, JSON error if not found; tests for success, failure, not found
+- [ ] 3.4 Stage 3.1 — notification verification: signature / hash check, duplicate handling, background processing, retries
+- [ ] 3.5 Order + Order Product on the first successful payment
+- [ ] 3.6 Lead conversion carries form data; reset; Simulate Payment Success stays as the demo backup
 
-**Decisions (2026-10-30):** clickable mock payment page on the phone; no initial fee, the first payment is the first month (Standard 900 / Premium 1,500 THB); new customer status **Awaiting Installation** between payment and installation.
+**Demo impact:** the demo today converts the Lead and creates the contract automatically on the first payment. The production flow above makes conversion and contract creation staff actions; the demo keeps its one-click path until the client confirms.
 
-### Step 4 — Shipping and installation [ ] ~3 days
+### Step 4 — Shipping and installation [ ] 3.0 MD + PDFs
 
-**Customer view:** the payment converts the Lead → an **Installation** work order is created automatically with the customer's preferred date → the agent picks the installation partner and confirms the date → LINE: "Your installation is booked for 12 Nov 2026, 10:00, with Siam Water Service" → the unit ships to the partner → the partner installs it and reports back (photos, serial number, customer confirmation) → the agent clicks **Complete Installation** → within ~2 s, no refresh: asset **In Use**, contract **Active**, customer **Active**, filter date set, and LINE: "Your NORITZ purifier is installed. Next billing: 1 Dec 2026".
+Paid order → **Work Order** created with the product's installation steps (copied from the Work Instruction Template as Work Order Line Items) → staff set date, time and address and confirm with the customer in the chat → staff print the **shipping label** and **installation instructions** (PDF) → staff send the job to the partner by LINE / email → partner installs → staff update the work order (serial no., photos as Files, install date) → staff **register the purifier** (or pick a Ready for Re-use unit) and set it **In Use** with the start date → contract Active, billing from the 1st of the next month.
 
-**Objects**
+- [ ] 4.1 `Work_Instruction_Template__c` (Product, Work Type) and `Work_Instruction_Step__c` (master-detail) — config ~1 MD outside procode
+- [ ] 4.2 Flow / Apex: create the Work Order and copy the steps when the order is paid or a Case is opened for the product
+- [ ] 4.3 Work Order fields: Partner, Contract, Asset, Template, Work Type, Scheduled Date, Shipment Status, Serial Number, Installation Fee, Travel Expense, Return Cost
+- [ ] 4.4 Installation Partner record type on Account
 
-- **Installation partner:** a Business Account with record type **Installation Partner** (Person Accounts stay on for customers). Fields: contact, service area, tax ID (later for partner payments).
-- **Work order:** standard `WorkOrder` if it is enabled in the org (verify first), otherwise a custom `Work_Order__c`. New fields: `Work_Type__c` (Installation, Filter, Repair, Removal — later steps reuse it), `Partner__c`, `Contract__c`, `Asset__c`, `Scheduled_Date__c`, `Shipment_Status__c` (Not Shipped, Shipped to Partner, Received by Partner), `Serial_Number__c`, `Customer_Confirmed__c`, `Completed_Date__c`, `Partner_Feedback__c`. Photos are Files on the work order.
-- **Asset status:** add **In Warehouse** and **At Partner**; relabel **Installed** as **In Use**; retire **Purchased** later (the company keeps ownership, nothing is sold). `Assets__c` gets a `Contract__c` lookup.
+Decisions kept from 2026-10-30: staff record the completion report (no partner form); billing starts on the **1st of the month after installation**; filter interval **6 months** in `Subscription_Setting__mdt`.
 
-- [ ] 4.1 Partner record type, work order object and fields, asset status values, `Assets__c.Contract__c`, layouts (0.5 d)
-- [ ] 4.2 On conversion: create the Installation work order (preferred date from the form) and an `Assets__c` record (In Warehouse, no serial yet) linked to the contract (0.5 d)
-- [ ] 4.3 **Book Installation** action: choose partner and date → LINE booking message to the customer (0.25 d)
-- [ ] 4.4 Shipment status on the work order (set by hand or a mock "swifT shipped" button for now; the real swifT file comes in a later step) → asset At Partner (0.25 d)
-- [ ] 4.5 **Complete Installation** action (LWC): serial number, photo upload, customer confirmed tick box, feedback (0.75 d)
-- [ ] 4.6 Installation-complete automation: asset In Use with serial and install date, `Next_Filter_Replacement__c` = install date + filter interval, contract Active with `Next_Billing_Date__c` = 1st of the month after installation, customer Active, LINE message, live refresh. Filter interval read from new custom metadata `Subscription_Setting__mdt.Filter_Interval_Months__c` (default 6) (0.5 d)
-- [ ] 4.7 Partner demo data, reset (Somchai stays fully installed so Scenario 2 still works), tests (0.25 d)
+### Step 5 — Monthly billing, failed payments and renewal [ ] 4.0 + 3.0 + 1.5 MD
 
-**Decisions (2026-10-30):** the agent records the completion report on the partner's behalf; monthly billing starts on the **1st of the month after installation**; filter interval **6 months**, held in custom metadata so it can change without a deploy (demo data keeps "due in 14 days").
+Staff issue the monthly invoice (**Issue Invoice** button: PDF saved as a File, link sent in LINE and by email) → Krungsri's subscription schedule charges the saved card on the billing date → result recorded → **paid:** "payment received" → **failed:** retry within the grace period (Krungsri or Salesforce, per the API) → still failing: service suspended, LINE link to update the card (existing recovery flow) → customer updates the card → service reactivated.
 
-### Step 5 — Monthly billing, failed payments and renewal [ ] ~2.75 days
+Renewal: 30 days before the end (`Renewal_Notice_Days__c`) LINE asks: **Renew 12 months / Continue monthly / End service** (postback buttons); no reply → reminder 7 days before, then continue monthly (assumption to confirm); End → Step 7.
 
-**Customer view:** on the 1st of each month Krungsri charges the saved card → the result is posted to Salesforce → **paid:** LINE "We've received 1,500 THB for your December subscription. Thank you!" → **failed:** the existing recovery runs (contract Payment Failed, customer Payment Suspended, bold red row, retry message) → the customer taps the retry link, which opens the mock payment page in **update card** mode → the new card is saved and charged at once → contract and customer back to Active, LINE "Payment received, your service continues".
+- [ ] 5.1 Stage 5 — payment results from the schedule, failed-payment recovery, update card, renewal choice
+- [ ] 5.2 Stage 5.1 — dunning: retry schedule, grace period, suspension, reactivation (may shrink if Krungsri retries)
+- [ ] 5.3 Stage 5.2 — `Invoice__c` (own numbering; status Issued / Agreed / Paid) and the Issue Invoice button. The official tax invoice and receipt come from swifT.
 
-**Approach (recommended):** Krungsri runs the recurring schedule in its own portal; Salesforce only records the results it posts back. For the demo, a mock **Krungsri billing run** plays Krungsri's part. Both the run and the existing Simulate buttons send their result through the Step 3 payment endpoint, so every path behaves the same.
+### Step 6 — Filter care and repairs [ ] 3.5 MD
 
-- [ ] 5.1 Contract fields: `Recurring_Start_Date__c`, `Number_of_Payments__c`, `Last_Payment_Date__c`, demo-only `Fail_Next_Charge__c` tick box (0.25 d)
-- [ ] 5.2 Mock billing run: a button (and an optional daily scheduled job) that charges every Active contract whose `Next_Billing_Date__c` is today or earlier, using its saved card; success unless `Fail_Next_Charge__c` is ticked (0.5 d)
-- [ ] 5.3 Paid: `Payment_History__c` row with method and transaction id, `Next_Billing_Date__c` moves to the next 1st, LINE "payment received" message (0.25 d)
-- [ ] 5.4 Failed: reuse `Payment_Failure_Recovery`; retry link opens the mock payment page in update-card mode; new card token saved and charged immediately → `Payment_Success_Recovery` (0.5 d)
-- [ ] 5.5 Rewire **Simulate Payment Success / Failure** through the payment endpoint; reset; tests (0.5 d)
-- [ ] 5.6 Renewal choice: a daily flow sends a LINE message `Renewal_Notice_Days__c` (custom metadata, default 30) before `Contract_End_Date__c`, with three quick-reply buttons: **Renew 12 months**, **Continue monthly**, **End service**. The LINE webhook learns `postback` events (shared with Step 6 booking). Renew → end date + 12 months, `Number_of_Payments__c` + 12; Continue monthly → `Renewal_Type__c` = Month-to-month; End service → contract **Termination Requested** → Step 7. Agent gets a bell notification. No answer: a second reminder 7 days before the end, then the contract continues monthly so service never stops (assumption, confirm with the client). New fields `Renewal_Type__c`, `Renewal_Notice_Sent__c` (0.75 d)
+Filter: scheduled LINE reminder with time-slot buttons → customer picks a slot → Filter work order created from the template → partner replaces the filter (free) → staff close the work order; next filter date + 6 months.
+Repair: customer reports in LINE or by phone → staff open a Case → fixed over chat? → if not, a Repair work order is created from the product's steps → partner visits (free) → repaired, or unit swapped on the same contract (old unit goes to Step 7 inspection) → Case closed, LINE message.
 
-**Decisions (2026-10-30):** Krungsri runs the recurring schedule and Salesforce only records the results; the sign-up payment is month 1 of 12, no proration; before the term ends the subscriber gets a LINE notification and chooses to renew, continue monthly or end.
+- [ ] 6.1 Time-slot quick replies on the filter reminder (postback) → Filter work order
+- [ ] 6.2 Case gets `Asset__c` and `Subscription_Contract__c`; Repair work order from the Case
+- [ ] 6.3 Unit swap keeps the contract and end date
 
-### Step 6 — Filter care and repairs [ ] ~2.5 days
+Open with GBD: their sheet assumes filter timing is set by hand (row 43) and contract / asset updates are manual (row 46). The estimate automates both.
 
-**Customer view, filter:** the existing filter reminder now ends with three time-slot buttons ("Tue 18 Nov morning", …) → the customer taps one → a **Filter** work order is created for that slot → the agent assigns a partner (Step 4 **Book** action) → after the visit the agent clicks **Complete Visit** → next filter date = visit date + 6 months, LINE "Your filter has been replaced. Next replacement: May 2027".
+### Step 7 — Cancellation and return [ ] 3.0 MD
 
-**Customer view, repair:** the customer reports a problem in LINE or by phone → the agent opens a Case (already built) → **Create Repair Visit** on the Case → **Repair** work order, asset **Under Repair** → after the visit the agent records the outcome: **Repaired**, or **Unit swapped** (new serial number: old asset → Returned and on to Step 7 inspection, new asset → In Use on the same contract) → Case closes, LINE "Your purifier has been repaired".
+Customer asks to cancel (or taps End) → contract Termination Requested → before the end date? → cancellation fee from the metadata rule (None / Fixed / % of months left) → Removal work order → partner collects the unit → staff end the contract (Terminated), billing stops, customer Former Customer → return cost recorded on the work order → warehouse check → **Ready for Re-use** or **Terminated** → asset status file to swifT.
 
-- [ ] 6.1 Filter reminder with time-slot quick replies (postback, shared with 5.6) → Filter work order; uses the existing `Filter_Booking` chat template (0.5 d)
-- [ ] 6.2 Reuse **Book** and **Complete Visit** for Filter visits; completion resets the filter date from the metadata interval and sends the LINE message (0.5 d)
-- [ ] 6.3 Case gets an `Asset__c` lookup; **Create Repair Visit** action → Repair work order, asset Under Repair (0.25 d)
-- [ ] 6.4 Repair outcome: Repaired or Unit swapped (new asset record, old one Returned, contract relinked); close the Case; LINE message (0.75 d)
-- [ ] 6.5 Customer History card lists visits; reset; tests (0.5 d)
+- [ ] 7.1 Request Termination action, fee rule in `Subscription_Setting__mdt`
+- [ ] 7.2 Removal work order from the template
+- [ ] 7.3 Asset statuses In Warehouse / In Use / Ready for Re-use / Terminated (replace Purchased / Installed / Obsolete); `Reuse_Returned_Units_First__c` switch
 
-**Decisions (2026-10-30):** the customer picks a filter slot in LINE; filter visits and repairs are always free (no charge path needed); a swapped unit keeps the same contract and end date.
+Open with GBD: their sheet assumes cancellation is tracked with Tasks and the removal work order is created by hand (rows 52–53). Open with the client: approval or quality check before re-use (row 55).
 
-### Step 7 — Cancellation, removal and return [ ] ~2.25 days
+### Step 8 — Files for swifT [ ] 6.0 MD
 
-**Customer view:** the customer taps **End service** on the renewal message (Step 5.6), or asks to cancel early in LINE or by phone and the agent clicks **Request Termination** → contract **Termination Requested** → if before the end date, the early-termination fee is worked out and charged to the saved card → LINE summary: last day of service, fee (if any), and time-slot buttons for the removal visit → **Removal** work order, partner booked → after the visit the agent clicks **Complete Visit** → asset **Returned**, contract **Terminated**, monthly charges stop, customer **Former Customer**, LINE "Your purifier has been collected. Thank you for using NORITZ."
+New orders, contracts, payments (sales), asset status changes and return costs wait (`Exported_To_swifT__c` empty) → staff click **Export to swifT** (or a daily scheduled run) → CSV files in swifT's column layout (`swifT_Export_Layout__mdt`), only rows not yet sent, saved as Files on a `swifT_Export__c` record → staff download and import into swifT by hand. Contract number is the `Contracts__c` auto-number. Option 2 from the MOM (Data Export wizard) needs no development but exports Salesforce field names that must be re-mapped every time.
 
-**Back at the warehouse:** every returned unit (from removal, or swapped out in Step 6) gets **Record Inspection** → **Ready for Reuse**, **Under Repair** or **Disposed**. New installations (Step 4.2) take a Ready for Reuse unit before a new one.
+- [ ] 8.1 Export engine (layout in metadata, rows marked as exported)
+- [ ] 8.2 Five files: order, contract, inventory / asset status, sales, return cost
+- [ ] 8.3 Phase 2: bring swifT records (invoice / receipt / fixed-asset numbers) back into Salesforce
 
-- [ ] 7.1 Fields and values: contract `Termination_Requested_Date__c`, `Termination_Reason__c`, `Early_Termination_Fee__c`, `Service_End_Date__c`; contract statuses Termination Requested and Terminated; customer status Former Customer; asset statuses Returned, Inspection, Ready for Reuse, Disposed; `Inspection_Result__c`, `Inspection_Notes__c` (0.25 d)
-- [ ] 7.2 **Request Termination** action, sharing one path with the 5.6 End service button; fee rule from custom metadata; LINE summary with removal slot buttons (postback, as 6.1) (0.5 d)
-- [ ] 7.3 Fee charged through the payment endpoint with the saved card (mock) (0.25 d)
-- [ ] 7.4 Removal visit: Book and Complete Visit → asset Returned, contract Terminated, billing run skips the contract, customer Former Customer, LINE goodbye (0.5 d)
-- [ ] 7.5 **Record Inspection** action on the asset; Step 4.2 reuses Ready for Reuse units first (0.5 d)
-- [ ] 7.6 Reset, tests (0.25 d)
+### PDFs [ ] 4.0 MD
 
-**Decisions (2026-10-30):** the early-termination fee rule lives in custom metadata (`Subscription_Setting__mdt`: rule None / Fixed / Percent of remaining months, plus amount and percent), so the client can change it without a deploy; customer status after cancellation is **Former Customer**; whether new installations reuse inspected units first is also a metadata switch (`Reuse_Returned_Units_First__c`).
+- [ ] Contract (sign-off), invoice, shipment / installation instruction, shipping label — Visualforce, one class. Quote PDF uses the standard Quote template (config).
 
-### Step 8 — Hand-off to swifT [ ] ~3 days
+### Round 3 estimate (procode, V.4 – MOM 11-6)
 
-swifT (Toukei Thailand) keeps accounting, tax and fixed assets; it imports and exports CSV files. Salesforce sends what swifT needs and stores the numbers swifT sends back, linked by contract number, Salesforce asset id and serial number.
+| Line                                   | MD       |
+| -------------------------------------- | -------- |
+| Stage 1 LINE integration               | 4.5      |
+| LINE chat screen + Customer History    | 3.0      |
+| Stage 2 LIFF sign-up form              | 4.5      |
+| Stage 3 Krungsri first payment         | 5.0      |
+| Stage 3.1 Notification verification    | 3.0      |
+| Stage 4 Work orders from templates     | 3.0      |
+| Stage 5 Monthly billing and renewal    | 4.0      |
+| Stage 5.1 Dunning                      | 3.0      |
+| Stage 5.2 Issue invoice                | 1.5      |
+| Stage 6 Filter care and repairs        | 3.5      |
+| Stage 7 Cancellation and return        | 3.0      |
+| Stage 8 swifT CSV export               | 6.0      |
+| Visualforce PDFs                       | 4.0      |
+| Integration testing                    | 3.0      |
+| **Total**                              | **51.0** |
 
-**Salesforce → swifT (export files)**
-
-| File            | When a row is added                    | Main columns                                                                |
-| --------------- | -------------------------------------- | --------------------------------------------------------------------------- |
-| Sales orders    | Lead converted (Step 3)                | contract no., customer, tax ID, address, goods code, monthly price          |
-| Payments        | every successful payment (Steps 3, 5, 7) | contract no., amount, date, method, Krungsri transaction id, charge type (Service = monthly fee, VAT due on payment) |
-| Fixed assets    | installation complete (Step 4)         | Salesforce asset id, serial no., goods code, acquisition value, in-use date, location |
-| Partner payments | visit completed (Steps 4, 6, 7)       | partner, tax ID, visit type, standard fee, withholding tax 3%               |
-| Asset changes   | unit returned or disposed (Steps 6, 7) | Salesforce asset id, serial no., new status, date                           |
-
-**swifT → Salesforce (import file):** shipment status (replaces the manual button in 4.4), tax invoice and receipt numbers per payment, fixed asset number per asset.
-
-- [ ] 8.1 Fields and metadata: goods code per plan, standard partner fee per visit type, WHT rate 3%, `swifT_Customer_Code__c`, `swifT_Order_No__c`, `swifT_Receipt_No__c`, `swifT_Tax_Invoice_No__c`, `Fixed_Asset_Number__c`, `Exported_To_swifT__c` on each exported record (0.5 d)
-- [ ] 8.2 Export engine: one Apex class that writes each file from a column layout held in custom metadata (so it can match Toukei's format without code), marks rows as exported so nothing is sent twice; **Export to swifT** button plus an optional daily job; files saved on a **swifT Exchange** record (0.75 d)
-- [ ] 8.3 The five exports above (0.5 d)
-- [ ] 8.4 Import: upload swifT's reply CSV → shipment status, invoice and receipt numbers, fixed asset numbers written back; a **Simulate swifT reply** button for the demo (0.75 d)
-- [ ] 8.5 swifT Exchange page listing files and row counts; reset; tests (0.5 d)
-
-**Decisions (2026-10-30):** files are moved by hand (agent downloads from Salesforce, imports into swifT; automated SFTP/API is a later phase with Toukei); partner fees per visit type are placeholders in metadata until the client gives real amounts; we start with our own file layouts, held in metadata, and align with Toukei's import format later.
-
-### Round 3 total
-
-Step 1 built · Step 2 ~2 d · Step 3 ~2.5 d · Step 4 ~3 d · Step 5 ~2.75 d · Step 6 ~2.5 d · Step 7 ~2.25 d · Step 8 ~3 d · **about 18 working days**, plus rehearsal and documentation.
+Outside procode (for the PM): remove Partner Experience (−6 MD); Quote template ~0.5 MD; template objects and Work Order fields ~1 MD config. The uploaded WS's procode rows sum to 49.5 although its header cell shows 46.50; check that formula.
 
 ---
+
 
 ## Remaining work
 
@@ -375,6 +353,9 @@ Step 1 built · Step 2 ~2 d · Step 3 ~2.5 d · Step 4 ~3 d · Step 5 ~2.75 d ·
 | 2026-09-23 | Messages to the customer are in Thai.                                                                             | Matches the audience and the rest of the chat. The retry text is the spec's English sentence translated.      |
 | 2026-09-25 | Automated checkout and retry messages switched to English; seeded chat history stays Thai.                        | User request. Retry text follows the spec wording.                                                            |
 | 2026-09-23 | Seed script renamed to `reset_demo.apex` and extended to contract, account and payments.                          | Matches CLAUDE.md's name; one command resets everything.                                                      |
+| 2026-11-06 | Production scope follows the GBD MOM: staff create contracts, no partner portal, manual installation and asset registration, CSV export only. | GBD meeting, 6 Nov. Answers recorded as `[TSTH dev]` notes in GBD's List of Requirements. |
+| 2026-11-06 | Work orders come from a per-product Work Instruction Template; invoices are a custom `Invoice__c` issued by staff; Order created on the first payment for swifT. | MOM rows 5, 12, 33. See the data model. |
+| 2026-11-06 | Keep the custom `Contracts__c` and `Assets__c`; standard Order and Work Order get custom lookups to them. | The org already moved to the custom objects (2026-10-02). |
 
 ---
 
@@ -421,6 +402,12 @@ Currently on the page: standard highlights (Status, plan, next filter date), Pat
 - [ ] Right panel: three columns (current) or full-width bottom row as drawn?
 - [ ] Should the two demo buttons also sit on Somchai's Account page, so the presenter never leaves the chat?
 - [x] Stripe or Krungsri? **Krungsri** (Merchant Acquiring proposal, 2026-05-05); still mocked for the demo. See Round 3.
-- [ ] Krungsri recurring billing is scheduled in Krungsri's own portal: does Salesforce generate monthly charges, or only record the results Krungsri posts back?
-- [ ] Initial fee on top of the first month? Amount per plan?
+- [x] Monthly charging: Krungsri's subscription schedule runs it; Salesforce records the results (MOM 34). Retry ownership and iFrame depend on the Krungsri API (B-san).
+- [x] Initial fee: none; the first payment is month 1 of 12.
+- [ ] Contract sign-off: paper / scan, or an e-signature tool (not estimated)?
+- [ ] Salesforce invoice numbering vs the swifT tax invoice and receipt.
+- [ ] GBD alignment on automation the estimate includes but their sheet assumes manual: rows 35, 36, 43, 46, 52, 53.
+- [ ] Approval or quality check before re-using a returned unit (row 55).
+- [ ] Renewal: no reply means continue monthly?
+- [ ] Demo: keep automatic conversion and contract creation on payment, or switch to the staff-driven production flow?
 - [ ] Presentation date
