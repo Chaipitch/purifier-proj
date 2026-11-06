@@ -162,7 +162,7 @@ Source documents: _Subscription Business: Operational Overview_ (client), the Kr
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Flow, 8 steps, Manual / Trigger / Scheduled tags | Web: "NORITZ Subscription Flow" artifact · draw.io: [docs/noritz-subscription.drawio](docs/noritz-subscription.drawio), pages 1–2 |
 | Data model (objects, fields, relationships) | Web: "NORITZ Data Model" artifact · draw.io: same file, page 3                                                           |
-| Estimate                                | Google Sheet "NORITZ Estimate WS V.3 – Procode", tab **V.4 – MOM 11-6** (procode 51.0 MD); tab **MOM 11-6 answers**           |
+| Estimate                                | Google Sheet "NORITZ Estimate WS V.3 – Procode", tab **V.4 – MOM 11-6** (procode 52.0 MD); tab **MOM 11-6 answers**           |
 
 **Scope rules from the MOM (2026-11-06)**
 
@@ -252,13 +252,17 @@ Customer asks to cancel (or taps End) → contract Termination Requested → bef
 
 Open with GBD: their sheet assumes cancellation is tracked with Tasks and the removal work order is created by hand (rows 52–53). Open with the client: approval or quality check before re-use (row 55).
 
-### Step 8 — Files for swifT [ ] 6.0 MD
+### Step 8 — Files for swifT [ ] 7.0 MD
 
-New orders, contracts, payments (sales), asset status changes and return costs wait (`Exported_To_swifT__c` empty) → staff click **Export to swifT** (or a daily scheduled run) → CSV files in swifT's column layout (`swifT_Export_Layout__mdt`), only rows not yet sent, saved as Files on a `swifT_Export__c` record → staff download and import into swifT by hand. Contract number is the `Contracts__c` auto-number. Option 2 from the MOM (Data Export wizard) needs no development but exports Salesforce field names that must be re-mapped every time.
+New orders, contracts, payments (sales), asset status changes and return costs wait (`Exported_To_swifT__c` empty) → the export runs **every night by itself** (scheduled Apex, time in `Subscription_Setting__mdt.swifT_Export_Time__c`) **or** when staff click **Export to swifT** → anything new? → CSV files in swifT's column layout (`swifT_Export_Layout__mdt`), rows marked as sent → files **saved in Salesforce** on a `swifT_Export__c` record **and emailed to the swifT team** (`swifT_Email_Recipients__c`) → the swifT team imports them by hand (out of scope, MOM 17–18). Both triggers use the same code, so nothing is sent twice. A failed run leaves the rows unsent for the next run and notifies an admin. Contract number is the `Contracts__c` auto-number. Option 2 from the MOM (Data Export wizard) needs no development but exports Salesforce field names that must be re-mapped every time.
 
 - [ ] 8.1 Export engine (layout in metadata, rows marked as exported)
 - [ ] 8.2 Five files: order, contract, inventory / asset status, sales, return cost
-- [ ] 8.3 Phase 2: bring swifT records (invoice / receipt / fixed-asset numbers) back into Salesforce
+- [ ] 8.3 Nightly scheduled Apex (Batch if volume grows) + Export to swifT button
+- [ ] 8.4 Save files on `swifT_Export__c` and email them to the swifT team; admin notice on failure
+- [ ] 8.5 Phase 2: bring swifT records (invoice / receipt / fixed-asset numbers) back into Salesforce
+
+To confirm with Toukei: does swifT expect a file every night even when nothing is new?
 
 ### PDFs [ ] 4.0 MD
 
@@ -279,10 +283,10 @@ New orders, contracts, payments (sales), asset status changes and return costs w
 | Stage 5.2 Issue invoice                | 1.5      |
 | Stage 6 Filter care and repairs        | 3.5      |
 | Stage 7 Cancellation and return        | 3.0      |
-| Stage 8 swifT CSV export               | 6.0      |
+| Stage 8 swifT CSV export (nightly + button, email) | 7.0      |
 | Visualforce PDFs                       | 4.0      |
 | Integration testing                    | 3.0      |
-| **Total**                              | **51.0** |
+| **Total**                              | **52.0** |
 
 Outside procode (for the PM): remove Partner Experience (−6 MD); Quote template ~0.5 MD; template objects and Work Order fields ~1 MD config. The uploaded WS's procode rows sum to 49.5 although its header cell shows 46.50; check that formula.
 
