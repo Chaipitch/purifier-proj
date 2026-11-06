@@ -208,7 +208,7 @@ No initial fee: the first payment is month 1 of 12 (Standard 900 / Premium 1,500
 - [ ] 3.5 Order + Order Product on the first successful payment
 - [ ] 3.6 Lead conversion carries form data; reset; Simulate Payment Success stays as the demo backup
 
-**Demo impact:** the demo today converts the Lead and creates the contract automatically on the first payment. The production flow above makes conversion and contract creation staff actions; the demo keeps its one-click path until the client confirms.
+**Demo impact:** the demo today converts the Lead and creates the contract automatically on the first payment. The production flow above makes conversion and contract creation staff actions. **Decision (2026-11-06): leave the demo unchanged until the client signs off the production flow.**
 
 ### Step 4 — Shipping and installation [ ] 3.0 MD + PDFs
 
@@ -356,6 +356,7 @@ Outside procode (for the PM): remove Partner Experience (−6 MD); Quote templat
 | 2026-11-06 | Production scope follows the GBD MOM: staff create contracts, no partner portal, manual installation and asset registration, CSV export only. | GBD meeting, 6 Nov. Answers recorded as `[TSTH dev]` notes in GBD's List of Requirements. |
 | 2026-11-06 | Work orders come from a per-product Work Instruction Template; invoices are a custom `Invoice__c` issued by staff; Order created on the first payment for swifT. | MOM rows 5, 12, 33. See the data model. |
 | 2026-11-06 | Keep the custom `Contracts__c` and `Assets__c`; standard Order and Work Order get custom lookups to them. | The org already moved to the custom objects (2026-10-02). |
+| 2026-11-06 | Demo stays as is (one-click conversion and contract on payment); no Round 3 build until sign-off. | Wait for the client to sign off the production flow. |
 
 ---
 
@@ -409,5 +410,5 @@ Currently on the page: standard highlights (Status, plan, next filter date), Pat
 - [ ] GBD alignment on automation the estimate includes but their sheet assumes manual: rows 35, 36, 43, 46, 52, 53.
 - [ ] Approval or quality check before re-using a returned unit (row 55).
 - [ ] Renewal: no reply means continue monthly?
-- [ ] Demo: keep automatic conversion and contract creation on payment, or switch to the staff-driven production flow?
+- [x] Demo: keep it as is (automatic conversion and contract creation on payment) until the client signs off the production flow. Decided 2026-11-06.
 - [ ] Presentation date
